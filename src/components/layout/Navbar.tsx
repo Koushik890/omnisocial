@@ -4,11 +4,11 @@ import Image from "next/image"
 
 export function Navbar() {
   return (
-    <div className="w-full px-2 py-3">
-      <nav className="flex items-center rounded-full bg-[#F9F9F9]/80 backdrop-blur-sm border border-[#6F1FB6]/10 px-8 py-4 max-w-[1600px] mx-auto shadow-sm">
+    <div className="w-full px-2 py-2">
+      <nav className="flex items-center rounded-full bg-[#F9F9F9]/80 backdrop-blur-sm border border-[#6F1FB6]/10 px-6 py-3 max-w-[1600px] mx-auto shadow-sm">
         <div className="flex-1">
           <Link href="/" className="flex items-center">
-            <div className="relative h-20 w-80 -ml-12">
+            <div className="relative h-10 w-40 -ml-2">
               <Image 
                 src="/logo.png"
                 alt="OmniSocial Logo"

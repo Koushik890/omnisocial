@@ -1,11 +1,16 @@
-import { DashboardGrid } from './components/layout/DashboardGrid';
-import { InstagramAlert } from './components/instagram/InstagramAlert';
+import { onBoardUser } from '@/actions/user'
+import { redirect } from 'next/navigation'
+import React from 'react'
 
-export default function DashboardPage() {
-  return (
-    <div className="space-y-8">
-      <InstagramAlert />
-      <DashboardGrid />
-    </div>
-  );
+type Props = {}
+
+const Page = async (props: Props) => {
+  const user = await onBoardUser()
+  if (user.status === 200 || user.status === 201) {
+    return redirect(`dashboard/${user.data?.firstname}${user.data?.lastname}`)
+  }
+
+  return redirect('/sign-in')
 }
+
+export default Page
