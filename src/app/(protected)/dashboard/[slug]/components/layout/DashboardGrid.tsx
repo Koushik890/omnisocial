@@ -1,16 +1,19 @@
 import { StatsCard } from '../stats/StatsCard';
-import { SessionTimeCard } from '../cards/SessionTimeCard';
 import { SocialCommentsCard } from '../cards/SocialCommentsCard';
 import { RecentPostsCard } from '../cards/RecentPostsCard';
 import { AutomatedActivityCard } from '../cards/AutomatedActivityCard';
+import { SetupAutoRepliesCard } from '../cards/SetupAutoRepliesCard';
+import { AnswerQuestionsCard } from '../cards/AnswerQuestionsCard';
 
 export function DashboardGrid() {
   return (
     <div className="grid lg:grid-cols-3 gap-6">
       {/* First Column - Analytics Overview */}
-      <div className="lg:col-span-1 space-y-6">
+      <div className="lg:col-span-1 space-y-6 flex flex-col">
         <SocialCommentsCard />
-        <AutomatedActivityCard />
+        <div className="flex-1">
+          <AutomatedActivityCard className="h-full w-full" />
+        </div>
       </div>
 
       {/* Second and Third Columns */}
@@ -37,8 +40,11 @@ export function DashboardGrid() {
           />
         </div>
 
-        {/* Session Time Card */}
-        <SessionTimeCard />
+        {/* Action Cards Column */}
+        <div className="flex flex-col justify-center space-y-6">
+          <SetupAutoRepliesCard />
+          <AnswerQuestionsCard />
+        </div>
 
         {/* Recent Posts - Full Width */}
         <div className="md:col-span-2">

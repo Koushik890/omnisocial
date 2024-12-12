@@ -1,10 +1,20 @@
 'use client';
 
+import { cn } from '@/lib/utils';
 import { AutomatedActivityChart } from '../visualizations/AutomatedActivityChart';
 
-export function AutomatedActivityCard() {
+interface AutomatedActivityCardProps {
+  className?: string;
+}
+
+export function AutomatedActivityCard({ className }: AutomatedActivityCardProps) {
   return (
-    <div className="bg-gradient-to-br from-purple-500/10 to-pink-500/10 backdrop-blur-lg rounded-2xl border border-white/20 shadow-lg hover:shadow-xl transition-all duration-200">
+    <div
+      className={cn(
+        "bg-gradient-to-br from-purple-500/10 to-pink-500/10 backdrop-blur-lg rounded-2xl border border-white/20 shadow-lg hover:shadow-xl transition-all duration-200",
+        className
+      )}
+    >
       <div className="p-6">
         <div className="flex justify-between items-center mb-4">
           <div>

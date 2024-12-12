@@ -70,14 +70,17 @@ export function StatsCard(props: SingleStatCardProps | MultiStatCardProps) {
   if (props.type === 'single') {
     const { currentValue, previousValue, change, period } = props;
     return (
-      <div className={baseClasses}>
+      <div className={cn(
+        "h-[156px] bg-white rounded-2xl border border-[#E5E5E5] shadow-[0_2px_8px_rgba(162,136,247,0.05)] p-6 hover:shadow-[0_4px_12px_rgba(162,136,247,0.1)] transition-all duration-200",
+        props.className
+      )}>
         <div className="flex flex-col h-full">
           <h2 className="text-[15px] font-semibold text-[#2D2D2D] mb-auto">{props.title}</h2>
           <div>
-            <div className="text-2xl font-bold text-[#2D2D2D]">
+            <div className="text-[32px] font-bold text-[#2D2D2D] mb-2">
               {currentValue.toLocaleString()}
             </div>
-            <div className="flex items-center gap-1.5 text-sm mt-1">
+            <div className="flex items-center gap-1.5 text-[13px]">
               <span className="text-[#555555]">{previousValue.toLocaleString()} {period}</span>
               <span className={cn(
                 "flex items-center",
@@ -102,7 +105,10 @@ export function StatsCard(props: SingleStatCardProps | MultiStatCardProps) {
   }
 
   return (
-    <div className={baseClasses}>
+    <div className={cn(
+      "h-[156px] bg-white rounded-2xl border border-[#E5E5E5] shadow-[0_2px_8px_rgba(162,136,247,0.05)] p-6 hover:shadow-[0_4px_12px_rgba(162,136,247,0.1)] transition-all duration-200",
+      props.className
+    )}>
       <div className="border-b pb-2 mb-3">
         <div className="flex justify-between items-center">
           <h2 className="text-[15px] font-semibold">{props.title}</h2>

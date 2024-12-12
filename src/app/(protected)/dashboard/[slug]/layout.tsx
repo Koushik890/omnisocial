@@ -3,7 +3,7 @@
 import '@/app/globals.css';
 import { Inter } from 'next/font/google';
 import { Sidebar } from '@/components/global/sidebar';
-import { DashboardHeader } from './components/layout/DashboardHeader';
+import Navbar from '@/components/global/Navbar';
 import { use, useState } from 'react';
 import { cn } from '@/lib/utils';
 
@@ -30,7 +30,7 @@ export default function DashboardLayout({
           "flex-1 flex flex-col overflow-hidden transition-all duration-300",
           isSidebarCollapsed ? "lg:ml-[104px]" : "lg:ml-[274px]"
         )}>
-          <DashboardHeader />
+          <Navbar slug={resolvedParams.slug} />
           <div className="flex-1 overflow-y-auto p-6">
             <div className="container mx-auto">
               {children}
