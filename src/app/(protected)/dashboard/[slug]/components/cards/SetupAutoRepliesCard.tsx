@@ -1,28 +1,35 @@
 import { Card } from '@/components/ui/card'
 import { ChevronRight } from 'lucide-react'
 import Link from 'next/link'
+import { cn } from '@/lib/utils'
 
 export function SetupAutoRepliesCard() {
   return (
-    <Card className="relative h-[156px] bg-[#1a1f37] bg-gradient-to-br from-[#1a1f37] to-[#111627] rounded-2xl shadow-[0_2px_8px_rgba(162,136,247,0.05)] hover:shadow-[0_4px_12px_rgba(162,136,247,0.1)] transition-all duration-200">
-      <div className="h-full p-6">
+    <Card
+      className={cn(
+        "relative bg-gradient-to-br from-[#D3B9FF] to-[#E5CCFF] rounded-2xl border border-[#E0D5FF] shadow-[0_4px_12px_rgba(0,0,0,0.05)] transition-all duration-200 overflow-hidden backdrop-blur-sm",
+        "h-[156px]"
+      )}
+    >
+      <div className="absolute inset-0 bg-white/60 backdrop-filter backdrop-blur-sm" />
+      <div className="relative h-full p-6">
         <div className="flex flex-col h-full">
           {/* Header Section */}
           <div className="mb-auto">
-            <h3 className="text-[15px] font-semibold text-white mb-0.5">
+            <h3 className="text-lg font-semibold text-[#5E2D9E] mb-0">
               Set-up Auto Replies
             </h3>
-            <p className="text-[13px] text-gray-400">
+            <p className="text-sm text-[#7E7E9A]">
               Deliver a product lineup through Instagram DM
             </p>
           </div>
 
           {/* Footer Section */}
-          <div className="flex items-center justify-between text-[11px] text-gray-400">
+          <div className="flex items-center justify-between text-xs text-[#7E7E9A]">
             <span className="pr-4 leading-relaxed">Get products in front of your followers in as many places</span>
             <Link 
               href="/dashboard/automation/create"
-              className="flex items-center justify-center w-9 h-9 rounded-full bg-[#2563eb] text-white flex-shrink-0 transition-transform hover:scale-105 hover:shadow-md"
+              className="flex items-center justify-center w-9 h-9 rounded-full bg-[#6B47FF] text-white flex-shrink-0 transition-transform hover:scale-105 hover:shadow-md"
             >
               <ChevronRight className="h-5 w-5" />
             </Link>

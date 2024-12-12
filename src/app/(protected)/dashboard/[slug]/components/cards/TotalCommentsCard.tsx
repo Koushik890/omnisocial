@@ -1,9 +1,7 @@
 import { Card } from '@/components/ui/card'
-import { ChevronRight } from 'lucide-react'
-import Link from 'next/link'
 import { cn } from '@/lib/utils'
 
-export function AnswerQuestionsCard() {
+export function TotalCommentsCard() {
   return (
     <div
       className={cn(
@@ -17,22 +15,22 @@ export function AnswerQuestionsCard() {
           {/* Header Section */}
           <div className="mb-auto">
             <h3 className="text-lg font-semibold text-[#5E2D9E] mb-0">
-              Answer Questions with AI
+              Total Comments
             </h3>
             <p className="text-sm text-[#7E7E9A]">
-              Identify and respond to queries with AI
+              Last week performance
             </p>
           </div>
 
-          {/* Footer Section */}
-          <div className="flex items-center justify-between text-xs text-[#7E7E9A]">
-            <span className="pr-4 leading-relaxed">The intention of the message will be automatically detected</span>
-            <Link 
-              href="/dashboard/ai-responses"
-              className="flex items-center justify-center w-9 h-9 rounded-full bg-[#6B47FF] text-white flex-shrink-0 transition-transform hover:scale-105 hover:shadow-md"
-            >
-              <ChevronRight className="h-5 w-5" />
-            </Link>
+          {/* Stats Section */}
+          <div className="flex items-center justify-between text-sm text-[#7E7E9A]">
+            <div>
+              <span className="text-2xl font-semibold text-[#5E2D9E]">8,250</span>
+              <div className="flex items-center mt-1">
+                <span className="text-[#48C78E] font-medium">+8.8%</span>
+                <span className="ml-2 text-xs">vs 7,580</span>
+              </div>
+            </div>
           </div>
         </div>
       </div>
