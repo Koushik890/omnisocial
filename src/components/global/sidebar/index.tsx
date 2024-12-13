@@ -34,7 +34,7 @@ const Sidebar = ({ slug, onCollapsedChange }: Props) => {
         className={cn(
           "fixed left-0 border-[1px] border-[#E5E5E5] bg-gradient-to-b from-[#A288F7] via-[#A288F7]/95 to-[#F7C1E4] bottom-0 top-0 m-2 rounded-[24px] overflow-visible z-50 shadow-lg transition-all duration-300",
           isCollapsed ? "w-[80px]" : "w-[250px]",
-          "md:block hidden" // Show on medium screens and up, hide on mobile
+          "lg:block hidden max-[1024px]:hidden" // Show on lg screens, hide on tablet and mobile
         )}
       >
         <div className="relative w-full h-full">

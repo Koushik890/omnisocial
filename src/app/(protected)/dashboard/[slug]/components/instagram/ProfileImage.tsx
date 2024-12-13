@@ -9,24 +9,16 @@ interface ProfileImageProps {
 
 export function ProfileImage({ avatarUrl, username }: ProfileImageProps) {
   return (
-    <div className="relative">
-      {/* Main container */}
-      <div className="relative h-[120px] w-[120px] rounded-[30px] p-[3px] bg-gradient-to-br from-pink-500 via-purple-500 to-blue-500">
-        {/* Solid white ring */}
-        <div className="absolute inset-0 rounded-[30px] border-[3px] border-white"></div>
-
-        {/* Image container with solid background */}
-        <div className="relative h-full w-full rounded-[28px] overflow-hidden bg-white">
-          <Image
-            src={avatarUrl}
-            alt={username}
-            fill
-            className="object-cover"
-            priority
-            sizes="120px"
-            quality={90}
-          />
-        </div>
+    <div className="flex items-center justify-center">
+      <div className="relative w-20 h-20 sm:w-24 sm:h-24">
+        <Image
+          src={avatarUrl || '/images/placeholder-user.png'}
+          alt={`${username}'s profile picture`}
+          fill
+          className="object-cover rounded-xl"
+          sizes="(max-width: 640px) 80px, 96px"
+          priority
+        />
       </div>
     </div>
   );

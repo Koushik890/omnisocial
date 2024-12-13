@@ -1,35 +1,28 @@
 'use client';
 
-import { Image as ImageIcon, Users, UserPlus } from 'lucide-react';
+import { Image as ImageIcon, Users as Users2Icon, UserPlus as UserPlusIcon } from 'lucide-react';
+import { formatInstagramCount } from '@/lib/utils/formatInstagramCount';
 
 interface StatItemProps {
   icon?: React.ReactNode;
   value: number;
   label: string;
-  bgColor?: string;
-  iconColor?: string;
 }
 
-function StatItem({ icon, value, label, bgColor = "bg-gradient-to-br from-blue-50 to-blue-100/50", iconColor = "text-blue-600" }: StatItemProps) {
+function StatItem({ icon, value, label }: StatItemProps) {
+  const formattedValue = formatInstagramCount(value)
+
   return (
-    <div className="flex items-center gap-6 group">
-      {icon && (
-        <div className={`${bgColor} p-2.5 rounded-xl shadow-sm flex items-center justify-center transition-all duration-300 group-hover:shadow-md`}>
-          <div className={`w-5 h-5 ${iconColor}`}>
-            {icon}
-          </div>
-        </div>
-      )}
+    <div className="flex items-center gap-1.5 sm:gap-3">
+      <div className="p-1 sm:p-2 bg-purple-50 rounded-md sm:rounded-lg shrink-0">
+        {icon}
+      </div>
       <div className="flex flex-col">
-        <span className="text-xl font-semibold text-gray-900 transition-colors duration-300 group-hover:text-gray-800">
-          {value.toLocaleString()}
-        </span>
-        <span className="text-xs font-medium text-gray-500 tracking-wide transition-colors duration-300 group-hover:text-gray-600">
-          {label}
-        </span>
+        <span className="text-xs sm:text-base font-semibold text-gray-900 leading-tight">{formattedValue}</span>
+        <span className="text-[10px] sm:text-sm text-gray-600 leading-tight">{label}</span>
       </div>
     </div>
-  );
+  )
 }
 
 interface ProfileStatsProps {
@@ -40,27 +33,21 @@ interface ProfileStatsProps {
 
 export function ProfileStats({ posts, followers, following }: ProfileStatsProps) {
   return (
-    <div className="flex items-center gap-16">
+    <div className="flex flex-wrap items-center justify-between sm:justify-center sm:gap-20 w-full">
       <StatItem 
-        icon={<ImageIcon className="stroke-[2.5px]" />}
+        icon={<ImageIcon className="h-3.5 w-3.5 sm:h-5 sm:w-5 text-purple-600 stroke-[2.5px]" />}
         value={posts} 
-        label="POSTS"
-        bgColor="bg-gradient-to-br from-blue-50 to-blue-100/50"
-        iconColor="text-blue-600"
+        label="Posts"
       />
       <StatItem 
-        icon={<Users className="stroke-[2.5px]" />}
+        icon={<Users2Icon className="h-3.5 w-3.5 sm:h-5 sm:w-5 text-purple-600 stroke-[2.5px]" />}
         value={followers} 
-        label="FOLLOWERS"
-        bgColor="bg-gradient-to-br from-purple-50 to-purple-100/50"
-        iconColor="text-purple-600"
+        label="Followers"
       />
       <StatItem 
-        icon={<UserPlus className="stroke-[2.5px]" />}
+        icon={<UserPlusIcon className="h-3.5 w-3.5 sm:h-5 sm:w-5 text-purple-600 stroke-[2.5px]" />}
         value={following} 
-        label="FOLLOWING"
-        bgColor="bg-gradient-to-br from-pink-50 to-pink-100/50"
-        iconColor="text-pink-600"
+        label="Following"
       />
     </div>
   );
