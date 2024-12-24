@@ -1,4 +1,5 @@
 import { PAGE_ICON } from '@/constants/pages'
+import { Settings } from '@/icons/settings'
 import React from 'react'
 
 type Props = {
@@ -18,7 +19,9 @@ const MainBreadCrumb = ({ page, slug }: Props) => {
 
   const firstName = getFirstName(slug)
 
-  if (page === 'Home') {
+  const normalizedPage = page.toLowerCase()
+
+  if (normalizedPage === 'home') {
     return (
       <div className="flex flex-col items-start">
         <div className="flex justify-center w-full">
@@ -28,6 +31,17 @@ const MainBreadCrumb = ({ page, slug }: Props) => {
             </h1>
             <p className="text-sm text-[#6B7280]">Here's what's happening with your social media accounts today.</p>
           </div>
+        </div>
+      </div>
+    )
+  }
+
+  if (normalizedPage === 'settings' || normalizedPage === 'integrations') {
+    return (
+      <div className="flex flex-col items-start">
+        <div className="flex items-center gap-2">
+          {normalizedPage === 'settings' ? <Settings /> : PAGE_ICON[page.toUpperCase()]}
+          <h2 className="font-semibold text-xl text-[#2D2D2D] capitalize">{page}</h2>
         </div>
       </div>
     )

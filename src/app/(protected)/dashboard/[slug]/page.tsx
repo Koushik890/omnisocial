@@ -1,4 +1,3 @@
-import { SocialCommentsCard } from './components/cards/SocialCommentsCard';
 import { RecentPostsCard } from './components/cards/RecentPostsCard';
 import { AutomatedActivityCard } from './components/cards/AutomatedActivityCard';
 import { SetupAutoRepliesCard } from './components/cards/SetupAutoRepliesCard';
@@ -12,32 +11,30 @@ export default function DashboardPage() {
     <div className="space-y-6 px-4 sm:px-6 lg:px-8">
       <InstagramAlert />
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6">
-        {/* First Column - Analytics Overview */}
-        <div className="lg:col-span-1 space-y-4 sm:space-y-6 flex flex-col">
-          <SocialCommentsCard />
-          <div className="flex-1">
-            <AutomatedActivityCard className="h-full w-full" />
+        {/* First Column with Extended Automated Activity */}
+        <div className="lg:col-span-2">
+          <div className="h-full">
+            <AutomatedActivityCard className="h-full" />
           </div>
         </div>
 
-        {/* Second and Third Columns */}
-        <div className="lg:col-span-2 grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
-          {/* Stats Row */}
-          <div className="flex flex-col justify-center space-y-4 sm:space-y-6">
-            <TotalCommentsCard />
-            <CommentRepliesCard />
-          </div>
-
-          {/* Action Cards Column */}
-          <div className="flex flex-col justify-center space-y-4 sm:space-y-6">
+        {/* Action Cards Column */}
+        <div className="lg:col-span-1">
+          <div className="flex flex-col justify-between space-y-4 sm:space-y-6">
             <SetupAutoRepliesCard />
             <AnswerQuestionsCard />
           </div>
+        </div>
 
-          {/* Recent Posts - Full Width */}
-          <div className="sm:col-span-2">
-            <RecentPostsCard />
-          </div>
+        {/* Left Column for Stats */}
+        <div className="lg:col-span-1 space-y-4 sm:space-y-6">
+          <TotalCommentsCard />
+          <CommentRepliesCard />
+        </div>
+
+        {/* Recent Posts - Extended */}
+        <div className="lg:col-span-2">
+          <RecentPostsCard />
         </div>
       </div>
     </div>

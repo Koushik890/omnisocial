@@ -31,8 +31,8 @@ const options: ChartOptions<'line'> = {
   maintainAspectRatio: false,
   layout: {
     padding: {
-      left: -8,
-      right: -8
+      left: 8,
+      right: 8
     }
   },
   plugins: {
@@ -144,7 +144,7 @@ const data = {
 
 export function AutomatedActivityChart() {
   return (
-    <div className="h-[180px] -mx-4">
+    <div className="h-[180px] w-full">
       <Line options={options} data={data} />
     </div>
   );

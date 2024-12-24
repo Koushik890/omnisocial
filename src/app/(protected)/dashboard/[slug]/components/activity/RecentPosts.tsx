@@ -5,7 +5,8 @@ interface Post {
   platform: 'facebook' | 'instagram';
   title: string;
   comments: number;
-  sent: number;
+  replies: number;
+  dm: number;
 }
 
 const posts: Post[] = [
@@ -14,48 +15,46 @@ const posts: Post[] = [
     platform: 'facebook',
     title: 'On the off chance that you...',
     comments: 12,
-    sent: 0
+    replies: 8,
+    dm: 3
   },
   {
     id: 2,
     platform: 'facebook',
     title: 'While attempting to outlin...',
     comments: 8,
-    sent: 0
+    replies: 5,
+    dm: 2
   },
   {
     id: 3,
     platform: 'instagram',
     title: 'Commercial industry and ...',
     comments: 15,
-    sent: 0
+    replies: 10,
+    dm: 4
   },
   {
     id: 4,
     platform: 'facebook',
     title: 'The Oneplus 8 Pro is comi...',
     comments: 5,
-    sent: 0
-  },
-  {
-    id: 5,
-    platform: 'instagram',
-    title: 'New features coming soon...',
-    comments: 10,
-    sent: 0
+    replies: 3,
+    dm: 1
   }
 ];
 
 export function RecentPosts() {
   return (
-    <div className="h-[300px]">
-      <div className="h-[280px] overflow-hidden">
+    <div className="h-[260px]">
+      <div className="h-[240px] overflow-hidden">
         <table className="w-full">
           <thead>
             <tr className="text-sm text-gray-500">
-              <th className="text-left font-medium pb-3 pr-4 w-[60%]">POST</th>
-              <th className="text-right font-medium pb-3 px-4 w-[20%]">COMMENTS</th>
-              <th className="text-right font-medium pb-3 pl-4 w-[20%]">SENT</th>
+              <th className="text-left font-medium pb-3 pr-4 w-[55%]">POST</th>
+              <th className="text-center font-medium pb-3 px-4 w-[15%]">COMMENTS</th>
+              <th className="text-center font-medium pb-3 px-4 w-[15%]">REPLIES</th>
+              <th className="text-center font-medium pb-3 px-4 w-[15%]">DM</th>
             </tr>
           </thead>
           <tbody className="text-sm">
@@ -77,8 +76,9 @@ export function RecentPosts() {
                     <span className="text-gray-900 truncate">{post.title}</span>
                   </div>
                 </td>
-                <td className="text-right px-4">{post.comments}</td>
-                <td className="text-right pl-4">{post.sent}</td>
+                <td className="text-center py-3 px-4">{post.comments}</td>
+                <td className="text-center py-3 px-4">{post.replies}</td>
+                <td className="text-center py-3 px-4">{post.dm}</td>
               </tr>
             ))}
           </tbody>

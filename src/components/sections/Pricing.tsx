@@ -1,8 +1,36 @@
+'use client'
+
 import { useState } from "react"
 import { Check } from 'lucide-react'
 import { Button } from "@/components/ui/button"
 import { Card, CardHeader, CardDescription, CardTitle, CardContent, CardFooter } from "@/components/ui/card"
-import { pricingPlans } from "@/lib/data"
+
+export const pricingPlans = [
+  {
+    name: 'Free Plan',
+    description: 'Perfect for getting started',
+    monthlyPrice: '$0',
+    quarterlyPrice: '$0',
+    features: [
+      'Boost engagement with target responses',
+      'Automate comment replies to enhance audience interaction',
+      'Turn followers into customers with targeted messaging'
+    ]
+  },
+  {
+    name: 'Smart AI Plan',
+    description: 'Advanced features for power users',
+    monthlyPrice: '$99',
+    quarterlyPrice: '$89',
+    features: [
+      'All features from Free Plan',
+      'AI-powered response generation',
+      'Advanced analytics and insights',
+      'Priority customer support',
+      'Custom branding options'
+    ]
+  }
+]
 
 export function Pricing() {
   const [billingPeriod, setBillingPeriod] = useState<'monthly' | 'quarterly'>('monthly')

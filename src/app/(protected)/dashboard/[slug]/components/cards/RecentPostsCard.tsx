@@ -4,7 +4,7 @@ import { RecentPosts } from '../activity/RecentPosts';
 
 export function RecentPostsCard() {
   return (
-    <div className="relative bg-gradient-to-br from-[#D3B9FF] to-[#E5CCFF] rounded-2xl border border-[#E0D5FF] shadow-[0_4px_12px_rgba(0,0,0,0.05)] transition-all duration-200 overflow-hidden backdrop-blur-sm">
+    <div className="relative bg-gradient-to-br from-[#D3B9FF] to-[#E5CCFF] rounded-2xl border border-[#E0D5FF] shadow-[0_4px_12px_rgba(0,0,0,0.05)] transition-all duration-200 overflow-hidden backdrop-blur-sm h-[335px]">
       <div className="absolute inset-0 bg-white/60 backdrop-filter backdrop-blur-sm" />
       <div className="relative p-6">
         <div className="flex justify-between items-center mb-4">
