@@ -4,12 +4,10 @@ import { SetupAutoRepliesCard } from './components/cards/SetupAutoRepliesCard';
 import { AnswerQuestionsCard } from './components/cards/AnswerQuestionsCard';
 import { TotalCommentsCard } from './components/cards/TotalCommentsCard';
 import { CommentRepliesCard } from './components/cards/CommentRepliesCard';
-import { InstagramAlert } from './components/instagram/InstagramAlert';
 
 export default function DashboardPage() {
   return (
     <div className="space-y-6 px-4 sm:px-6 lg:px-8">
-      <InstagramAlert />
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6">
         {/* First Column with Extended Automated Activity */}
         <div className="lg:col-span-2">

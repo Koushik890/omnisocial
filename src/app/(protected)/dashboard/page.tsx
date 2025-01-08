@@ -1,3 +1,16 @@
+// import { redirect } from 'next/navigation'
+// import React from 'react'
+
+// interface Props {}
+
+// const Page = async (props: Props) => {
+//   // Redirect to a default dashboard view
+//   redirect('/dashboard/default')
+// }
+
+// export default Page
+
+
 import { onBoardUser } from '@/actions/user'
 import { redirect } from 'next/navigation'
 import React from 'react'

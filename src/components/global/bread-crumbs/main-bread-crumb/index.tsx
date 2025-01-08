@@ -36,7 +36,7 @@ const MainBreadCrumb = ({ page, slug }: Props) => {
     )
   }
 
-  if (normalizedPage === 'settings' || normalizedPage === 'integrations') {
+  if (normalizedPage === 'settings' || normalizedPage === 'integrations' || normalizedPage === 'automations') {
     return (
       <div className="flex flex-col items-start">
         <div className="flex items-center gap-2">
