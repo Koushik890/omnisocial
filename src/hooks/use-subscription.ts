@@ -1,17 +1,9 @@
-import axios from 'axios'
-import { useState } from 'react'
+// import { CHECKOUT_URL } from '@/lib/lemonsqueezy'
 
-export const useSubscription = () => {
-  const [isProcessing, setIsProcessing] = useState(false)
-  const onSubscribe = async () => {
-    setIsProcessing(true)
-    const response = await axios.get('/api/payment')
-    if (response.data.status === 200) {
-      return (window.location.href = `${response.data.session_url}`)
-    }
+// export const useSubscription = () => {
+//   const onSubscribe = () => {
+//     window.location.href = CHECKOUT_URL
+//   }
 
-    setIsProcessing(false)
-  }
-
-  return { onSubscribe, isProcessing }
-}
+//   return { onSubscribe }
+// }

@@ -1,14 +1,3 @@
-// // Placeholder implementation for onBoardUser
-// export async function onBoardUser() {
-//   // This is a mock implementation. Replace with actual user onboarding logic
-//   return {
-//     status: 200,
-//     data: {
-//       firstname: 'John',
-//       lastname: 'Doe'
-//     }
-//   }
-// }
 
 'use server'
 
@@ -18,6 +7,7 @@ import { redirect } from 'next/navigation'
 import { createUser, findUser, updateSubscription } from './queries'
 import { refreshToken } from '@/lib/fetch'
 import { updateIntegration } from '../integrations/queries'
+
 
 export const onCurrentUser = async () => {
   const user = await currentUser()
@@ -83,6 +73,25 @@ export const onUserInfo = async () => {
     const profile = await findUser(user.id)
     if (profile) return { status: 200, data: profile }
 
+    return { status: 404 }
+  } catch (error) {
+    return { status: 500 }
+  }
+}
+
+export const onSubscribe = async (session_id: string) => {
+  const user = await onCurrentUser()
+  try {
+    const session = await stripe.checkout.sessions.retrieve(session_id)
+    if (session) {
+      const subscribed = await updateSubscription(user.id, {
+        customerId: session.customer as string,
+        plan: 'PRO',
+      })
+
+      if (subscribed) return { status: 200 }
+      return { status: 401 }
+    }
     return { status: 404 }
   } catch (error) {
     return { status: 500 }

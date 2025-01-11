@@ -101,7 +101,7 @@ export function Pricing() {
                 <Button 
                   className="w-full rounded-full bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white py-6 transition-all duration-300 shadow-md hover:shadow-lg"
                 >
-                  Start free trial
+                  Upgrade Now
                 </Button>
               </CardFooter>
             </Card>

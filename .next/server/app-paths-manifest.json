@@ -1,5 +1,4 @@
 {
-  "/(website)/page": "app/(website)/page.js",
   "/(protected)/dashboard/page": "app/(protected)/dashboard/page.js",
   "/(protected)/dashboard/[slug]/page": "app/(protected)/dashboard/[slug]/page.js",
   "/(auth)/sign-in/[[...sign-in]]/page": "app/(auth)/sign-in/[[...sign-in]]/page.js"
