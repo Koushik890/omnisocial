@@ -32,7 +32,9 @@ model Subscription {
   createdAt  DateTime          @default(now())
   plan       SUBSCRIPTION_PLAN @default(FREE)
   updatedAt  DateTime          @default(now())
-  customerId String?           @unique
+  customerId String?           @unique @map("customer_id")
+  lemonSqueezyCustomerPortalUrl String?
+  subscriptionStatus        SUBSCRIPTION_STATUS?
 }
 
 model Integrations {
@@ -125,4 +127,11 @@ enum MEDIATYPE {
 enum LISTENERS {
   OMNIAI
   MESSAGE
+}
+
+enum SUBSCRIPTION_STATUS {
+  ACTIVE
+  PAST_DUE
+  CANCEL_AT_PERIOD_END
+  DELETED
 }

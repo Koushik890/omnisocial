@@ -1,6 +1,7 @@
 'use server'
 
 import { client } from '@/lib/prisma'
+import { SUBSCRIPTION_PLAN, SUBSCRIPTION_STATUS } from '@prisma/client'
 
 export const findUser = async (clerkId: string) => {
   return await client.user.findUnique({
@@ -34,7 +35,10 @@ export const createUser = async (
       lastname,
       email,
       subscription: {
-        create: {},
+        create: {
+          plan: SUBSCRIPTION_PLAN.FREE,
+          subscriptionStatus: undefined, // Free users don't have an active subscription status
+        },
       },
     },
     select: {
@@ -51,12 +55,18 @@ export const updateSubscription = async (
   const user = await client.user.findUnique({
     where: { clerkId },
     include: { subscription: true }
-  })
+  });
 
   if (!user) {
-    console.error('User not found:', clerkId)
-    throw new Error('User not found')
+    console.error('User not found:', clerkId);
+    throw new Error('User not found');
   }
+
+  const subscriptionData = {
+    plan: props.plan === 'PRO' ? SUBSCRIPTION_PLAN.PRO : SUBSCRIPTION_PLAN.FREE,
+    subscriptionStatus: props.plan === 'PRO' ? SUBSCRIPTION_STATUS.ACTIVE : undefined,
+    ...(props.customerId ? { customerId: props.customerId } : {})
+  };
 
   // If subscription doesn't exist, create it
   if (!user.subscription) {
@@ -64,13 +74,10 @@ export const updateSubscription = async (
       where: { clerkId },
       data: {
         subscription: {
-          create: {
-            customerId: props.customerId,
-            plan: props.plan
-          }
+          create: subscriptionData
         }
       }
-    })
+    });
   }
 
   // If subscription exists, update it
@@ -78,11 +85,10 @@ export const updateSubscription = async (
     where: { clerkId },
     data: {
       subscription: {
-        update: {
-          data: props
-        }
+        update: subscriptionData
       }
     }
-  })
-}
+  });
+};
+
 

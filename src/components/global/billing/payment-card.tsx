@@ -6,6 +6,9 @@ import { pricingPlans } from '@/components/sections/Pricing'
 import { CircleCheck } from 'lucide-react'
 import { Button } from "@/components/ui/button"
 import ArrowRight from '@/icons/ArrowRight'
+import { useLemonSqueezy } from '@/hooks/use-lemonsqueezy'
+import { useUser } from '@clerk/nextjs'
+import { SUBSCRIPTION_PLAN } from '@prisma/client'
 
 type props = {
     label: string
@@ -14,6 +17,19 @@ type props = {
 }
 
 const PaymentCard = ({ label, current, landing }: props) => {
+    const { user } = useUser();
+    const { createCheckoutSession, isLoading } = useLemonSqueezy();
+
+    const handleUpgrade = async () => {
+        if (!user?.id || !user?.emailAddresses?.[0]?.emailAddress) return;
+
+        await createCheckoutSession({
+            userId: user.id,
+            userEmail: user.emailAddresses[0].emailAddress,
+            plan: SUBSCRIPTION_PLAN.PRO,
+        });
+    };
+
     return (
         <div className={cn(label !== current
             ? 'bg-background-90/50 hover:bg-gradient-to-r hover:from-indigo-500/10 hover:via-purple-500/10 hover:to-pink-500/10 transition-all duration-300'
@@ -92,9 +108,11 @@ const PaymentCard = ({ label, current, landing }: props) => {
                                 ? 'bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600 hover:from-indigo-500 hover:via-purple-500 hover:to-pink-500 text-white/90 hover:text-white shadow-xl shadow-indigo-500/20 hover:shadow-indigo-500/30 border border-white/10'
                                 : 'bg-white/5 hover:bg-white/10 text-white/80 hover:text-white backdrop-blur-sm border border-white/10 hover:border-white/20'
                         )}
+                        onClick={label === 'PRO' ? handleUpgrade : undefined}
+                        disabled={isLoading}
                     >
                         <span className="relative z-10 inline-flex items-center gap-2">
-                            {label === current ? 'Get Started' : label === 'PRO' ? 'Upgrade to Pro' : 'Continue with Free'}
+                            {isLoading ? 'Loading...' : (label === current ? 'Get Started' : label === 'PRO' ? 'Upgrade to Pro' : 'Continue with Free')}
                             <div className="w-5 h-5 rounded-full bg-white/10 flex items-center justify-center">
                                 <ArrowRight className="w-4 h-4" />
                             </div>
@@ -112,20 +130,21 @@ const PaymentCard = ({ label, current, landing }: props) => {
                                 ? 'bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600 hover:from-indigo-500 hover:via-purple-500 hover:to-pink-500 text-white/90 hover:text-white disabled:from-gray-700 disabled:to-gray-800 disabled:text-white/80 shadow-xl shadow-indigo-500/20 hover:shadow-indigo-500/30 border border-white/10'
                                 : 'bg-white/5 hover:bg-white/10 text-white/80 hover:text-white backdrop-blur-sm disabled:bg-gray-800/50 disabled:text-white/90 disabled:border-white/5 border border-white/10 hover:border-white/20'
                         )}
-                        disabled={label === current}
+                        disabled={label === current || isLoading}
+                        onClick={label === 'PRO' ? handleUpgrade : undefined}
                     >
                         <span className="relative z-10 inline-flex items-center gap-2">
                             <span className={cn(
                                 label === current && 'text-white/90 font-semibold',
                                 'transition-colors'
                             )}>
-                                {label === current
+                                {isLoading ? 'Loading...' : (label === current
                                     ? 'Current Plan'
                                     : label === 'PRO'
                                         ? 'Upgrade Now'
-                                        : 'Downgrade Plan'}
+                                        : 'Downgrade Plan')}
                             </span>
-                            {label !== current && (
+                            {label !== current && !isLoading && (
                                 <div className="w-5 h-5 rounded-full bg-white/10 flex items-center justify-center">
                                     <ArrowRight className="w-4 h-4" />
                                 </div>

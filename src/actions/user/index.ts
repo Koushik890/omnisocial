@@ -7,6 +7,7 @@ import { createUser, findUser, updateSubscription } from './queries'
 import { refreshToken } from '@/lib/fetch'
 import { updateIntegration } from '../integrations/queries'
 
+
 export const onCurrentUser = async () => {
   const user = await currentUser()
   if (!user) return redirect('/sign-in')
@@ -60,7 +61,7 @@ export const onBoardUser = async () => {
     )
     return { status: 201, data: created }
   } catch (error) {
-    console.log(error)
+    console.error('Error in onBoardUser:', error instanceof Error ? error.message : 'Unknown error');
     return { status: 500 }
   }
 }
@@ -73,6 +74,7 @@ export const onUserInfo = async () => {
 
     return { status: 404 }
   } catch (error) {
+    console.error('Error in onUserInfo:', error instanceof Error ? error.message : 'Unknown error');
     return { status: 500 }
   }
 }
