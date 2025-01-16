@@ -1,6 +1,29 @@
 import React from 'react';
 import Link from 'next/link';
 
+const USER_RIGHTS = [
+  "Access your personal data",
+  "Correct inaccurate data",
+  "Request deletion of your data",
+  "Object to processing of your data",
+  "Request transfer of your data"
+];
+
+const DATA_COLLECTION_ITEMS = [
+  "Account information (name, email)",
+  "Social media integration data",
+  "Automation preferences and settings",
+  "Usage data and analytics"
+];
+
+const DATA_USAGE_ITEMS = [
+  "Provide and maintain our services",
+  "Process your social media automations",
+  "Improve our services",
+  "Communicate with you about our services",
+  "Comply with legal obligations"
+];
+
 const PrivacyPolicyPage = () => {
   return (
     <div className="min-h-screen bg-gradient-to-b from-gray-50 to-white">
@@ -49,12 +72,7 @@ const PrivacyPolicyPage = () => {
             <h2 className="text-2xl font-bold text-gray-900 mb-4">2. Data We Collect</h2>
             <p className="text-gray-700 mb-4">When you use OmniSocial, we collect and process the following information:</p>
             <ul className="list-none space-y-3">
-              {[
-                'Account information (name, email)',
-                'Social media integration data',
-                'Automation preferences and settings',
-                'Usage data and analytics'
-              ].map((item, index) => (
+              {DATA_COLLECTION_ITEMS.map((item, index) => (
                 <li key={index} className="flex items-start">
                   <span className="flex-shrink-0 h-6 w-6 flex items-center justify-center rounded-full bg-purple-100 text-purple-600 mr-3">•</span>
                   <span className="text-gray-700">{item}</span>
@@ -68,13 +86,7 @@ const PrivacyPolicyPage = () => {
             <h2 className="text-2xl font-bold text-gray-900 mb-4">3. How We Use Your Data</h2>
             <p className="text-gray-700 mb-4">We use your data to:</p>
             <ul className="list-none space-y-3">
-              {[
-                'Provide and maintain our services',
-                'Process your social media automations',
-                'Improve our services',
-                'Communicate with you about our services',
-                'Comply with legal obligations'
-              ].map((item, index) => (
+              {DATA_USAGE_ITEMS.map((item, index) => (
                 <li key={index} className="flex items-start">
                   <span className="flex-shrink-0 h-6 w-6 flex items-center justify-center rounded-full bg-purple-100 text-purple-600 mr-3">•</span>
                   <span className="text-gray-700">{item}</span>
@@ -89,7 +101,7 @@ const PrivacyPolicyPage = () => {
             <p className="text-gray-700 leading-relaxed">
               We share your data with third parties only as necessary to provide our services, 
               including social media platforms you choose to integrate with. We require all third 
-              parties to respect your data&#39;s security and handle it according to the law.
+              parties to respect your data&apos;s security and handle it according to the law.
             </p>
           </section>
 
@@ -107,13 +119,7 @@ const PrivacyPolicyPage = () => {
             <h2 className="text-2xl font-bold text-gray-900 mb-4">6. Your Rights</h2>
             <p className="text-gray-700 mb-4">You have the right to:</p>
             <ul className="list-none space-y-3">
-              {[
-                'Access your personal data',
-                'Correct inaccurate data',
-                'Request deletion of your data',
-                'Object to processing of your data',
-                'Request transfer of your data'
-              ].map((item, index) => (
+              {USER_RIGHTS.map((item, index) => (
                 <li key={index} className="flex items-start">
                   <span className="flex-shrink-0 h-6 w-6 flex items-center justify-center rounded-full bg-purple-100 text-purple-600 mr-3">•</span>
                   <span className="text-gray-700">{item}</span>
