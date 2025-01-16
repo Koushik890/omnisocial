@@ -1,4 +1,3 @@
-/* eslint-disable react/no-unescaped-entities */
 import React from 'react';
 import Link from 'next/link';
 
@@ -87,11 +86,10 @@ const PrivacyPolicyPage = () => {
           {/* Data Sharing */}
           <section className="border-b border-gray-100 pb-6">
             <h2 className="text-2xl font-bold text-gray-900 mb-4">4. Data Sharing and Third Parties</h2>
-            {/* eslint-disable-next-line react/no-unescaped-entities */}
             <p className="text-gray-700 leading-relaxed">
               We share your data with third parties only as necessary to provide our services, 
               including social media platforms you choose to integrate with. We require all third 
-              parties to respect your data's security and handle it according to the law.
+              parties to respect your data&apos;s security and handle it according to the law.
             </p>
           </section>
 
