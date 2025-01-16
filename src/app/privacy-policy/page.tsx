@@ -130,7 +130,7 @@ const PrivacyPolicyPage = () => {
               please contact us at&nbsp;
               <a href="mailto:support@omnisocial.com" className="text-purple-600 hover:text-purple-700 underline">
                 support@omnisocial.com
-              </a>
+              </a>.
             </p>
           </section>
 
