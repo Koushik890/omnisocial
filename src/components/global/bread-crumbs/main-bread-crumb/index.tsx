@@ -29,7 +29,7 @@ const MainBreadCrumb = ({ page, slug }: Props) => {
             <h1 className="flex items-center gap-2 text-xl font-semibold text-[#2D2D2D]">
               Welcome back{firstName && `, ${firstName}!`}
             </h1>
-            <p className="text-sm text-[#6B7280]">Here's what's happening with your social media accounts today.</p>
+            <p className="text-sm text-[#6B7280]">Here&apos;s what&apos;s happening with your social media accounts today.</p>
           </div>
         </div>
       </div>

@@ -2,7 +2,6 @@
 import { Separator } from '@/components/ui/separator'
 import { useQueryAutomation } from '@/hooks/user-queries'
 import { InstagramBlue, Warning } from '@/icons'
-import Image from 'next/image'
 import React from 'react'
 
 type Props = {
@@ -43,6 +42,11 @@ const PostNode = ({ id }: Props) => {
                                     src={post.media}
                                     alt="post image"
                                     className="w-full h-full object-cover"
+                                    onError={(e) => {
+                                        const target = e.target as HTMLImageElement;
+                                        target.onerror = null;
+                                        target.src = '/placeholder-image.jpg';
+                                    }}
                                 />
                             </div>
                         ))}

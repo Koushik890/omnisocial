@@ -12,40 +12,44 @@ import {
 import PostNode from '@/components/global/automations/post/node'
 import ThenNode from '@/components/global/automations/then/node'
 
-type Props = {
-    params: {
-        id: string
-    }
-}
+type PageProps = {
+    params: Promise<{
+        id: string;
+        slug: string;
+    }>;
+};
 
-export async function generateMetadata({ params }: { params: { id: string } }) {
-    const info = await getAutomationInfo(params.id)
+export async function generateMetadata({ params }: PageProps) {
+    const resolvedParams = await params;
+    const info = await getAutomationInfo(resolvedParams.id);
     return {
         title: info.data?.name,
-    }
+    };
 }
 
-const Page = async ({ params }: Props) => {
-
-    const query = new QueryClient()
-    await PrefetchUserAutomation(query, params.id)
+const Page = async ({ params }: PageProps) => {
+    const resolvedParams = await params;
+    const automationId = resolvedParams.id;
+    
+    const query = new QueryClient();
+    await PrefetchUserAutomation(query, automationId);
 
     return (
         <HydrationBoundary state={dehydrate(query)}>
             <div className="flex flex-col items-center gap-y-20">
-                <AutomationsBreadCrumb id={params.id} />
+                <AutomationsBreadCrumb id={automationId} />
                 <div className="w-full lg:w-10/12 xl:w-6/12 p-5 rounded-xl flex flex-col bg-[#1D1D1D] gap-y-3 text-white">
                     <div className="flex items-center gap-2">
                         <Warning />
                         When...
                     </div>
-                    <Trigger id={params.id} />
+                    <Trigger id={automationId} />
                 </div>
-                <ThenNode id={params.id} />
-                <PostNode id={params.id} />
+                <ThenNode id={automationId} />
+                <PostNode id={automationId} />
             </div>
         </HydrationBoundary>
-    )
-}
+    );
+};
 
-export default Page
+export default Page;

@@ -4,7 +4,6 @@ import React from 'react'
 import TriggerButton from '../trigger-button'
 import { InstagramPostProps } from '@/types/posts.type'
 import { CheckCircle } from 'lucide-react'
-import Image from 'next/image'
 import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
 import Loader from '../../loader'
@@ -49,6 +48,11 @@ const PostButton = ({ id }: Props) => {
                                         'hover:opacity-75 transition duration-100 w-full h-full object-cover',
                                         posts.find((p) => p.postid === post.id) && 'opacity-75'
                                     )}
+                                    onError={(e) => {
+                                        const target = e.target as HTMLImageElement;
+                                        target.onerror = null;
+                                        target.src = '/placeholder-image.jpg';
+                                    }}
                                 />
                             </div>
                         ))}

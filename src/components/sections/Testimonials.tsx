@@ -1,8 +1,14 @@
 import { Star } from 'lucide-react'
 import { Card } from "@/components/ui/card"
 import { testimonials } from "@/lib/data"
+import { ReactNode } from 'react'
 
-const TextBlock = ({ children, className = "" }) => (
+type TextBlockProps = {
+  children: ReactNode
+  className?: string
+}
+
+const TextBlock = ({ children, className = "" }: TextBlockProps) => (
   <p className={`text-gray-700 leading-relaxed ${className}`}>{children}</p>
 )
 
@@ -23,7 +29,7 @@ export function Testimonials() {
               </div>
             </div>
             <TextBlock className="mb-4">
-              "{testimonial.content}"
+              &ldquo;{testimonial.content}&rdquo;
             </TextBlock>
             <div className="flex items-center">
               {Array.from({ length: 5 }).map((_, i) => (
