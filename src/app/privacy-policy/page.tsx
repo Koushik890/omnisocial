@@ -127,7 +127,7 @@ const PrivacyPolicyPage = () => {
             <h2 className="text-2xl font-bold text-gray-900 mb-4">7. Contact Us</h2>
             <p className="text-gray-700 leading-relaxed">
               If you have any questions about this privacy policy or our privacy practices, 
-              please contact us at{' '}
+              please contact us at&nbsp;
               <a href="mailto:support@omnisocial.com" className="text-purple-600 hover:text-purple-700 underline">
                 support@omnisocial.com
               </a>
