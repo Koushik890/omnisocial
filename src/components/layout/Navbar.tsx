@@ -20,18 +20,21 @@ export function Navbar() {
           </Link>
         </div>
         <div className="flex-1 flex justify-center">
-          <div className="hidden md:flex items-center space-x-12">
-            <Link href="#features" className="text-[#333333] hover:text-[#6F1FB6] font-medium transition-colors">
+          <div className="hidden md:flex items-center space-x-8">
+            <Link href="#features" className="text-[#333333] hover:text-[#6F1FB6] font-medium transition-colors whitespace-nowrap">
               Features
             </Link>
-            <Link href="#pricing" className="text-[#333333] hover:text-[#6F1FB6] font-medium transition-colors">
+            <Link href="#pricing" className="text-[#333333] hover:text-[#6F1FB6] font-medium transition-colors whitespace-nowrap">
               Pricing
             </Link>
-            <Link href="#testimonials" className="text-[#333333] hover:text-[#6F1FB6] font-medium transition-colors">
+            <Link href="#testimonials" className="text-[#333333] hover:text-[#6F1FB6] font-medium transition-colors whitespace-nowrap">
               Testimonials
             </Link>
-            <Link href="#blog" className="text-[#333333] hover:text-[#6F1FB6] font-medium transition-colors">
+            <Link href="#blog" className="text-[#333333] hover:text-[#6F1FB6] font-medium transition-colors whitespace-nowrap">
               Blog
+            </Link>
+            <Link href="/privacy-policy" className="text-[#333333] hover:text-[#6F1FB6] font-medium transition-colors whitespace-nowrap">
+              Privacy&nbsp;Policy
             </Link>
           </div>
         </div>

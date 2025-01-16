@@ -28,24 +28,67 @@ export const createUser = async (
   lastname: string,
   email: string
 ) => {
-  return await client.user.create({
-    data: {
-      clerkId,
-      firstname,
-      lastname,
-      email,
-      subscription: {
-        create: {
-          plan: SUBSCRIPTION_PLAN.FREE,
-          subscriptionStatus: undefined, // Free users don't have an active subscription status
+  // First check if user exists
+  const existingUser = await client.user.findUnique({
+    where: { clerkId },
+    include: { subscription: true }
+  });
+
+  if (existingUser) {
+    // If user exists, just update the details
+    return await client.user.update({
+      where: { clerkId },
+      data: {
+        firstname,
+        lastname,
+        email,
+      },
+      select: {
+        firstname: true,
+        lastname: true,
+      },
+    });
+  }
+
+  // If user doesn't exist, create new user with subscription
+  try {
+    return await client.user.create({
+      data: {
+        clerkId,
+        firstname,
+        lastname,
+        email,
+        subscription: {
+          create: {
+            plan: SUBSCRIPTION_PLAN.FREE,
+            subscriptionStatus: undefined,
+          },
         },
       },
-    },
-    select: {
-      firstname: true,
-      lastname: true,
-    },
-  })
+      select: {
+        firstname: true,
+        lastname: true,
+      },
+    });
+  } catch (error: any) {
+    if (error?.code === 'P2002') {
+      // If we hit a unique constraint error, someone else created the user
+      // between our check and create, so let's just update instead
+      return await client.user.update({
+        where: { clerkId },
+        data: {
+          firstname,
+          lastname,
+          email,
+        },
+        select: {
+          firstname: true,
+          lastname: true,
+        },
+      });
+    }
+    throw error; // Re-throw any other errors
+  }
 }
 
 export const updateSubscription = async (

@@ -1,8 +1,4 @@
 {
-  "/api/webhooks/lemonsqueezy/route": "app/api/webhooks/lemonsqueezy/route.js",
   "/(website)/page": "app/(website)/page.js",
-  "/(protected)/dashboard/page": "app/(protected)/dashboard/page.js",
-  "/(protected)/dashboard/[slug]/page": "app/(protected)/dashboard/[slug]/page.js",
-  "/(auth)/sign-up/[[...sign-up]]/page": "app/(auth)/sign-up/[[...sign-up]]/page.js",
-  "/(protected)/dashboard/[slug]/settings/page": "app/(protected)/dashboard/[slug]/settings/page.js"
+  "/privacy-policy/page": "app/privacy-policy/page.js"
 }

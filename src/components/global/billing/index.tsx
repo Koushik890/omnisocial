@@ -1,12 +1,18 @@
+'use client'
+
 import React from "react";  
 import PaymentCard from "./payment-card";
+import { useQueryUser } from '@/hooks/user-queries';
+import { SUBSCRIPTION_PLAN } from '@prisma/client';
 
 type Props = {
     
 }
 
 const Billing = (props: Props) => {
-    //WIP: fetch billing information for user
+    const { data: userData } = useQueryUser();
+    const currentPlan = userData?.data?.subscription?.plan || SUBSCRIPTION_PLAN.FREE;
+
     return (
         <section className="w-full min-h-[80vh] flex items-center justify-center py-10">
             <div className="flex lg:flex-row flex-col gap-8 w-full lg:w-10/12 xl:w-8/12 container relative">
@@ -14,7 +20,7 @@ const Billing = (props: Props) => {
                 <div className="flex-1 relative grid">
                     <div className="h-full">
                         <PaymentCard
-                            current={'FREE'}
+                            current={currentPlan}
                             label="FREE"
                         />
                     </div>
@@ -22,7 +28,7 @@ const Billing = (props: Props) => {
                 <div className="flex-1 relative grid">
                     <div className="h-full">
                         <PaymentCard
-                            current={'FREE'}
+                            current={currentPlan}
                             label="PRO"
                         />
                     </div>

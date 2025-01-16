@@ -29,13 +29,14 @@ export default function RootLayout({
 }>) {
   return (
     <ClerkProvider>
-      <html lang="en">
+      <html lang="en" suppressHydrationWarning>
         <body
           suppressHydrationWarning
           className={inter.className}>
           <ThemeProvider
             attribute="class"
             defaultTheme="dark"
+            enableSystem={true}
             disableTransitionOnChange
           >
             <ReduxProvider>

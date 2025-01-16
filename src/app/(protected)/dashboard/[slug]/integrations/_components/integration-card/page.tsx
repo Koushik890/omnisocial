@@ -1,6 +1,11 @@
+'use client'
+
 import React from 'react'
 import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
+import { onOauthInstagram } from '@/actions/integrations'
+import { useQuery } from '@tanstack/react-query'
+import { onUserInfo } from '@/actions/user'
 
 type Props = {
   title: string
@@ -10,6 +15,16 @@ type Props = {
 }
 
 const IntegrationCard = ({ description, icon, strategy, title }: Props) => {
+  //WIP: wire up fetching data and get the integrations from the db
+  const onInstaOAuth = () => onOauthInstagram(strategy)
+
+  const { data } = useQuery({
+    queryKey: ['user-profile'],
+    queryFn: onUserInfo,
+  })
+
+  const integrated = data?.data?.integrations?.find((integration) => integration.name === strategy)
+
   return (
     <div className="bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 p-[2px] rounded-3xl overflow-hidden shadow-lg hover:shadow-xl transition-all duration-300">
       <div className="relative flex flex-col sm:flex-row items-start sm:items-center gap-6 rounded-3xl bg-background/80 backdrop-blur-sm p-4 sm:p-6 lg:p-8">
@@ -28,8 +43,8 @@ const IntegrationCard = ({ description, icon, strategy, title }: Props) => {
 
         <div className="flex items-center sm:self-center w-full sm:w-auto">
           <Button
-            // onClick={onInstaOAuth}
-            // disabled={integrated?.name === strategy}
+            onClick={onInstaOAuth}
+            disabled={integrated?.name === strategy}
             className={cn(
               "relative shrink-0 w-full sm:w-auto",
               "px-6 py-4 lg:px-10 lg:py-6 text-base lg:text-lg",
@@ -38,8 +53,7 @@ const IntegrationCard = ({ description, icon, strategy, title }: Props) => {
               "text-white font-medium rounded-xl lg:rounded-2xl"
             )}
           >
-            {/* {integrated ? 'Connected' : 'Connect'} */}
-            Connect
+            {integrated ? 'Connected' : 'Connect'}
           </Button>
         </div>
       </div>
