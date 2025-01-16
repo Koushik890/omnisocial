@@ -90,7 +90,7 @@ const PrivacyPolicyPage = () => {
             <p className="text-gray-700 leading-relaxed">
               We share your data with third parties only as necessary to provide our services, 
               including social media platforms you choose to integrate with. We require all third 
-              parties to respect your data's security and handle it according to the law.
+              parties to respect your data&apos;s security and handle it according to the law.
             </p>
           </section>
 
