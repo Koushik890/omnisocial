@@ -2,6 +2,8 @@
 const nextConfig = {
   images: {
     domains: [
+      'localhost',
+      'omnisocial.vercel.app',
       'scontent.cdninstagram.com',
       'graph.instagram.com'
     ],

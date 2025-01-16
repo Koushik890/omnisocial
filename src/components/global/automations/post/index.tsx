@@ -7,6 +7,7 @@ import { CheckCircle } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
 import Loader from '../../loader'
+import { BlurImage } from '@/components/ui/blur-image'
 
 type Props = {
     id: string
@@ -41,18 +42,15 @@ const PostButton = ({ id }: Props) => {
                                         className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 z-50"
                                     />
                                 )}
-                                <img
+                                <BlurImage
                                     src={post.media_url}
                                     alt="post image"
+                                    width={200}
+                                    height={200}
                                     className={cn(
                                         'hover:opacity-75 transition duration-100 w-full h-full object-cover',
                                         posts.find((p) => p.postid === post.id) && 'opacity-75'
                                     )}
-                                    onError={(e) => {
-                                        const target = e.target as HTMLImageElement;
-                                        target.onerror = null;
-                                        target.src = '/placeholder-image.jpg';
-                                    }}
                                 />
                             </div>
                         ))}

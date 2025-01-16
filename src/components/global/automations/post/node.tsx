@@ -3,6 +3,7 @@ import { Separator } from '@/components/ui/separator'
 import { useQueryAutomation } from '@/hooks/user-queries'
 import { InstagramBlue, Warning } from '@/icons'
 import React from 'react'
+import { BlurImage } from '@/components/ui/blur-image'
 
 type Props = {
     id: string
@@ -38,15 +39,12 @@ const PostNode = ({ id }: Props) => {
                                 key={post.id}
                                 className="relative w-4/12 aspect-square rounded-lg cursor-pointer overflow-hidden"
                             >
-                                <img
+                                <BlurImage
                                     src={post.media}
                                     alt="post image"
+                                    width={200}
+                                    height={200}
                                     className="w-full h-full object-cover"
-                                    onError={(e) => {
-                                        const target = e.target as HTMLImageElement;
-                                        target.onerror = null;
-                                        target.src = '/placeholder-image.jpg';
-                                    }}
                                 />
                             </div>
                         ))}
