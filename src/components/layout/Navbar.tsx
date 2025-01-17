@@ -13,7 +13,7 @@ export function Navbar() {
 
   return (
     <div className="w-full px-2 py-2 sticky top-0 z-50">
-      <nav className="flex items-center rounded-full bg-[#F9F9F9]/80 backdrop-blur-sm border border-[#6F1FB6]/10 px-6 py-3 max-w-[1600px] mx-auto shadow-sm">
+      <nav className="flex items-center rounded-full bg-white/90 backdrop-blur-md border border-[#6F1FB6]/10 px-6 py-3 max-w-[1600px] mx-auto shadow-lg">
         <div className="flex-1">
           <Link href="/" className="flex items-center">
             <div className="relative h-10 w-40 -ml-2">
@@ -28,20 +28,20 @@ export function Navbar() {
           </Link>
         </div>
         <div className="flex-1 flex justify-center">
-          <div className="hidden md:flex items-center space-x-8">
-            <button onClick={() => scrollToSection("features")} className="text-[#333333] hover:text-[#6F1FB6] font-medium transition-colors whitespace-nowrap">
+          <div className="flex items-center space-x-8 max-md:hidden">
+            <button onClick={() => scrollToSection("features")} className="text-gray-800 hover:text-[#6F1FB6] font-medium transition-colors whitespace-nowrap">
               Features
             </button>
-            <button onClick={() => scrollToSection("pricing")} className="text-[#333333] hover:text-[#6F1FB6] font-medium transition-colors whitespace-nowrap">
+            <button onClick={() => scrollToSection("pricing")} className="text-gray-800 hover:text-[#6F1FB6] font-medium transition-colors whitespace-nowrap">
               Pricing
             </button>
-            <button onClick={() => scrollToSection("testimonials")} className="text-[#333333] hover:text-[#6F1FB6] font-medium transition-colors whitespace-nowrap">
+            <button onClick={() => scrollToSection("testimonials")} className="text-gray-800 hover:text-[#6F1FB6] font-medium transition-colors whitespace-nowrap">
               Testimonials
             </button>
-            <button onClick={() => scrollToSection("blog")} className="text-[#333333] hover:text-[#6F1FB6] font-medium transition-colors whitespace-nowrap">
+            <button onClick={() => scrollToSection("blog")} className="text-gray-800 hover:text-[#6F1FB6] font-medium transition-colors whitespace-nowrap">
               Blog
             </button>
-            <Link href="/privacy-policy" className="text-[#333333] hover:text-[#6F1FB6] font-medium transition-colors whitespace-nowrap">
+            <Link href="/privacy-policy" className="text-gray-800 hover:text-[#6F1FB6] font-medium transition-colors whitespace-nowrap">
               Privacy&nbsp;Policy
             </Link>
           </div>
