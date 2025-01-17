@@ -17,10 +17,16 @@ export default function Home() {
       <Navbar />
       <main className="max-w-7xl mx-auto px-8 py-16 bg-gradient-to-br from-white to-gray-50 space-y-20">
         <Hero />
-        <Features />
+        <section id="features">
+          <Features />
+        </section>
         <Statistics />
-        <Testimonials />
-        <Pricing />
+        <section id="testimonials">
+          <Testimonials />
+        </section>
+        <section id="pricing">
+          <Pricing />
+        </section>
       </main>
       <Footer />
     </div>
