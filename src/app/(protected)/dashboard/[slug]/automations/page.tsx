@@ -3,11 +3,7 @@ import { Check } from 'lucide-react'
 import CreateAutomation from '@/components/global/create-automation'
 import AutomationList from '@/components/global/automation-list/index'
 
-type Props = {}
-
-
-
-const Page = (props: Props) => {
+const Page = () => {
   // TODO: connect real automations list
    
   return (

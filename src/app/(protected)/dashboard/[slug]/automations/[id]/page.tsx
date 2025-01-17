@@ -13,23 +13,21 @@ import PostNode from '@/components/global/automations/post/node'
 import ThenNode from '@/components/global/automations/then/node'
 
 type PageProps = {
-    params: Promise<{
+    params: {
         id: string;
         slug: string;
-    }>;
+    };
 };
 
 export async function generateMetadata({ params }: PageProps) {
-    const resolvedParams = await params;
-    const info = await getAutomationInfo(resolvedParams.id);
+    const info = await getAutomationInfo(params.id);
     return {
         title: info.data?.name,
     };
 }
 
 const Page = async ({ params }: PageProps) => {
-    const resolvedParams = await params;
-    const automationId = resolvedParams.id;
+    const automationId = params.id;
     
     const query = new QueryClient();
     await PrefetchUserAutomation(query, automationId);

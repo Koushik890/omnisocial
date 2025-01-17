@@ -2,9 +2,7 @@ import { INTEGRATION_CARDS } from '@/constants/integrations'
 import IntegrationCard from './_components/integration-card/page'
 import React from 'react'
 
-type Props = {}
-
-const IntegrationsPage = (props: Props) => {
+const IntegrationsPage = () => {
   return (
     <div className="w-full px-4 py-6 sm:px-6 lg:px-8">
       <div className="mx-auto w-full lg:flex lg:justify-center">
