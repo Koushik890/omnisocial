@@ -1,13 +1,15 @@
 import { onIntegrate } from '@/actions/integrations'
 import { redirect } from 'next/navigation'
 
-type PageProps = {
-  params: { [key: string]: string | string[] | undefined }
-  searchParams: { [key: string]: string | string[] | undefined }
+interface PageProps {
+  params: Promise<any>
+  searchParams: Promise<{ [key: string]: string | string[] | undefined }>
 }
 
 async function Page({ searchParams }: PageProps) {
-  const code = searchParams.code as string | undefined
+  const resolvedParams = await searchParams
+  const code = resolvedParams.code as string | undefined
+
   if (code) {
     console.log(code)
     const user = await onIntegrate(code.split('#_')[0])
