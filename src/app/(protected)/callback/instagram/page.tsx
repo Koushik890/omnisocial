@@ -4,12 +4,12 @@ import React from 'react'
 
 type SearchParams = { [key: string]: string | string[] | undefined }
 
-interface Props {
-  params: { }
+type PageProps = {
+  params: Record<string, never>
   searchParams: SearchParams
 }
 
-const Page = async ({ searchParams }: Props) => {
+const Page = async ({ searchParams }: PageProps) => {
   const code = searchParams.code as string | undefined
   if (code) {
     console.log(code)
