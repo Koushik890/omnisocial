@@ -2,13 +2,13 @@ import { onIntegrate } from '@/actions/integrations'
 import { redirect } from 'next/navigation'
 import React from 'react'
 
-interface Props {
+interface PageProps {
   searchParams: {
-    code: string
+    code?: string
   }
 }
 
-const Page = async ({ searchParams }: Props) => {
+const Page = async ({ searchParams }: PageProps) => {
   const { code } = searchParams
   if (code) {
     console.log(code)
