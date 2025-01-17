@@ -14,13 +14,14 @@ const inter = Inter({ subsets: ['latin'] })
 
 interface Props {
   children: React.ReactNode
-  params: { slug: string }
+  params: Promise<{ slug: string }>
 }
 
 const DashboardLayout = async ({ children, params }: Props) => {
   // Query
   const query = new QueryClient()
-  const { slug } = params
+  const resolvedParams = await params
+  const { slug } = resolvedParams
 
   if (!slug || typeof slug !== 'string') {
     throw new Error('Invalid slug parameter')
