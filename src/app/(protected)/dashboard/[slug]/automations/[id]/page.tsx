@@ -12,22 +12,25 @@ import {
 import PostNode from '@/components/global/automations/post/node'
 import ThenNode from '@/components/global/automations/then/node'
 
-type PageProps = {
-    params: {
+interface PageProps {
+    params: Promise<{
         id: string;
         slug: string;
-    };
-};
+    }>;
+    searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
+}
 
 export async function generateMetadata({ params }: PageProps) {
-    const info = await getAutomationInfo(params.id);
+    const resolvedParams = await params;
+    const info = await getAutomationInfo(resolvedParams.id);
     return {
         title: info.data?.name,
     };
 }
 
 const Page = async ({ params }: PageProps) => {
-    const automationId = params.id;
+    const resolvedParams = await params;
+    const automationId = resolvedParams.id;
     
     const query = new QueryClient();
     await PrefetchUserAutomation(query, automationId);
