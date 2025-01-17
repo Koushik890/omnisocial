@@ -1,15 +1,12 @@
 import { onIntegrate } from '@/actions/integrations'
 import { redirect } from 'next/navigation'
-import React from 'react'
-
-type SearchParams = { [key: string]: string | string[] | undefined }
 
 type PageProps = {
-  params: Record<string, never>
-  searchParams: SearchParams
+  params: { [key: string]: string | string[] | undefined }
+  searchParams: { [key: string]: string | string[] | undefined }
 }
 
-const Page = async ({ searchParams }: PageProps) => {
+async function Page({ searchParams }: PageProps) {
   const code = searchParams.code as string | undefined
   if (code) {
     console.log(code)
