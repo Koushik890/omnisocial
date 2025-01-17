@@ -2,14 +2,15 @@ import { onIntegrate } from '@/actions/integrations'
 import { redirect } from 'next/navigation'
 import React from 'react'
 
-interface PageProps {
-  searchParams: {
-    code?: string
-  }
+type SearchParams = { [key: string]: string | string[] | undefined }
+
+interface Props {
+  params: { }
+  searchParams: SearchParams
 }
 
-const Page = async ({ searchParams }: PageProps) => {
-  const { code } = searchParams
+const Page = async ({ searchParams }: Props) => {
+  const code = searchParams.code as string | undefined
   if (code) {
     console.log(code)
     const user = await onIntegrate(code.split('#_')[0])
