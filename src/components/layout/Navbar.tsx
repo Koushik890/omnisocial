@@ -38,9 +38,6 @@ export function Navbar() {
             <button onClick={() => scrollToSection("testimonials")} className="text-gray-800 hover:text-[#6F1FB6] font-medium transition-colors whitespace-nowrap">
               Testimonials
             </button>
-            <button onClick={() => scrollToSection("blog")} className="text-gray-800 hover:text-[#6F1FB6] font-medium transition-colors whitespace-nowrap">
-              Blog
-            </button>
             <Link href="/privacy-policy" className="text-gray-800 hover:text-[#6F1FB6] font-medium transition-colors whitespace-nowrap">
               Privacy&nbsp;Policy
             </Link>
