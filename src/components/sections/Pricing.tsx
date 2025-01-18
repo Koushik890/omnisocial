@@ -39,7 +39,7 @@ export function Pricing() {
     <section id="pricing" className="mt-20 px-4 py-16 bg-gradient-to-b from-white to-purple-50 relative overflow-hidden">
       <div className="absolute inset-0 bg-purple-200 opacity-20 blur-3xl rounded-full transform -translate-x-1/2 -translate-y-1/2 left-3/4 top-1/2"></div>
       <div className="text-center max-w-3xl mx-auto mb-12 relative z-10">
-        <h2 className="text-3xl sm:text-4xl font-bold mb-8 text-gray-900 bg-clip-text text-transparent bg-gradient-to-r from-purple-600 to-pink-600">
+        <h2 className="text-3xl sm:text-4xl font-bold mb-8 text-gray-900">
           Choose your right plan!
         </h2>
         <p className="text-gray-600 mb-8 mt-6 text-lg">
@@ -72,7 +72,7 @@ export function Pricing() {
       <div className="flex justify-center items-center w-full">
         <div className="grid md:grid-cols-2 lg:grid-cols-2 gap-8 max-w-5xl mx-auto">
           {pricingPlans.map((plan) => (
-            <Card key={plan.name} className="relative bg-white rounded-3xl shadow-xl overflow-hidden w-full max-w-md flex flex-col transition-all duration-300 hover:shadow-2xl hover:-translate-y-1 bg-purple-50">
+            <Card key={plan.name} className="relative bg-white rounded-3xl shadow-xl overflow-hidden w-full max-w-md flex flex-col transition-all duration-300 hover:shadow-2xl hover:-translate-y-1">
               <div className="flex-grow">
                 <CardHeader className="pb-8">
                   <div className="mb-4">
@@ -83,10 +83,12 @@ export function Pricing() {
                   <CardDescription className="text-gray-600 min-h-[60px]">
                     {plan.description}
                   </CardDescription>
-                  <CardTitle className="text-4xl font-bold mt-4">
-                    ${billingPeriod === 'monthly' ? plan.monthlyPrice : plan.quarterlyPrice}
-                    <span className="text-base font-normal text-gray-600">/month</span>
-                  </CardTitle>
+                  <div className="mt-4">
+                    <div className="text-4xl font-bold text-gray-900">
+                      ${billingPeriod === 'monthly' ? plan.monthlyPrice : plan.quarterlyPrice}
+                      <span className="text-base font-normal text-gray-600 ml-1">/month</span>
+                    </div>
+                  </div>
                 </CardHeader>
                 <CardContent className="space-y-4">
                   {plan.features.map((feature) => (
