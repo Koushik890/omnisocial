@@ -1,17 +1,23 @@
 import Link from "next/link"
 import { Instagram, Twitter, Facebook, Mail } from 'lucide-react'
+import Image from "next/image"
 
 export function Footer() {
   return (
     <footer className="mt-20 bg-gray-100 py-12 px-4">
       <div className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-4 gap-8">
         <div className="flex flex-col justify-center space-y-4">
-          <div className="flex items-center space-x-2">
-            <div className="h-8 w-8 bg-gradient-to-br from-purple-500 to-pink-500 rounded-full flex items-center justify-center">
-              <Instagram className="h-5 w-5 text-white" />
+          <Link href="/" className="flex items-center">
+            <div className="relative h-10 w-40">
+              <Image 
+                src="/logo.png"
+                alt="OmniSocial Logo"
+                fill
+                className="object-contain"
+                priority
+              />
             </div>
-            <span className="font-semibold text-xl">automateinstareply</span>
-          </div>
+          </Link>
           <p className="text-sm text-gray-600">Automate your Instagram engagement and grow your community.</p>
         </div>
         <div>
@@ -43,7 +49,7 @@ export function Footer() {
         </div>
       </div>
       <div className="mt-8 pt-8 border-t border-gray-200 text-center">
-        <p className="text-sm text-gray-600">&copy; {new Date().getFullYear()} automateinstareply. All rights reserved.</p>
+        <p className="text-sm text-gray-600">&copy; {new Date().getFullYear()} OmniSocial. All rights reserved.</p>
       </div>
     </footer>
   )
