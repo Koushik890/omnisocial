@@ -9,8 +9,8 @@ export const pricingPlans = [
   {
     name: 'Free Plan',
     description: 'Perfect for getting started',
-    monthlyPrice: '$0',
-    quarterlyPrice: '$0',
+    monthlyPrice: 0,
+    quarterlyPrice: 0,
     features: [
       'Boost engagement with target responses',
       'Automate comment replies to enhance audience interaction',
@@ -20,8 +20,8 @@ export const pricingPlans = [
   {
     name: 'Smart AI Plan',
     description: 'Advanced features for power users',
-    monthlyPrice: '$99',
-    quarterlyPrice: '$89',
+    monthlyPrice: 99,
+    quarterlyPrice: 89,
     features: [
       'All features from Free Plan',
       'AI-powered response generation',
@@ -36,7 +36,7 @@ export function Pricing() {
   const [billingPeriod, setBillingPeriod] = useState<'monthly' | 'quarterly'>('monthly')
 
   return (
-    <section className="mt-20 px-4 py-16 bg-gradient-to-b from-white to-purple-50 relative overflow-hidden">
+    <section id="pricing" className="mt-20 px-4 py-16 bg-gradient-to-b from-white to-purple-50 relative overflow-hidden">
       <div className="absolute inset-0 bg-purple-200 opacity-20 blur-3xl rounded-full transform -translate-x-1/2 -translate-y-1/2 left-3/4 top-1/2"></div>
       <div className="text-center max-w-3xl mx-auto mb-12 relative z-10">
         <h2 className="text-3xl sm:text-4xl font-bold mb-8 text-gray-900 bg-clip-text text-transparent bg-gradient-to-r from-purple-600 to-pink-600">
