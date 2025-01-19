@@ -14,8 +14,6 @@ import Items from '@/components/global/sidebar/items'
 import CreateAutomation from '@/components/global/create-automation'
 import { Notifications } from './notifications'
 import MainBreadCrumb from '@/components/global/bread-crumbs/main-bread-crumb'
-import FollowersCard from './followers-card'
-import EngagementCard from './engagement-card'
 import Image from 'next/image'
 import Link from 'next/link'
 import { cn } from '@/lib/utils'
@@ -87,10 +85,6 @@ const InfoBar = ({ slug }: Props) => {
 
           {/* Right: Stats & Actions */}
           <div className="flex items-center gap-4">
-            <div className="hidden lg:flex items-center gap-4">
-              <FollowersCard />
-              <EngagementCard />
-            </div>
             <CreateAutomation />
             <Notifications />
           </div>

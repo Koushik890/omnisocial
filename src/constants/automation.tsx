@@ -43,7 +43,7 @@ export const AUTOMATION_LISTENERS: AutomationListenerProps[] = [
     },
     {
         id: v4(),
-        label: 'Let Smart AI take over',
+        label: 'Let Omni ai take over',
         icon: <OmniAi />,
         description: 'Tell AI about your project. (Upgrade to use this feature)',
         type: 'OMNIAI',

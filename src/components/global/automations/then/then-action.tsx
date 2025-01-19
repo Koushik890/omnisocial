@@ -74,7 +74,7 @@ const ThenAction = ({ id }: Props) => {
                     <Textarea
                         placeholder={
                             Listener === 'OMNIAI'
-                                ? 'Add a prompt that your smart ai can use...'
+                                ? 'Add a prompt that your omni ai can use...'
                                 : 'Add a message you want send to your customers'
                         }
                         {...register('prompt')}

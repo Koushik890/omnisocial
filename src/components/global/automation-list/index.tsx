@@ -10,6 +10,12 @@ import { useQueryAutomations } from '@/hooks/user-queries'
 import CreateAutomation from '../create-automation'
 import { useMutationDataState } from '@/hooks/use-mutation-data'
 
+type KeywordType = {
+  id: string
+  word: string
+  automationId: string | null
+}
+
 type Props = {}
 
 const AutomationList = (props: Props) => {
@@ -62,17 +68,20 @@ const AutomationList = (props: Props) => {
 
             {automation.keywords.length > 0 ? (
               <div className="flex gap-x-2 flex-wrap mt-3">
-                <div
-                  className={cn(
-                    'rounded-full px-4 py-1 capitalize',
-                    (0 + 1) % 1 === 0 && 'bg-keyword-green/15 border-2 border-keyword-green text-keyword-green',
-                    (1 + 1) % 2 === 0 && 'bg-keyword-purple/15 border-2 border-keyword-purple text-keyword-purple',
-                    (2 + 1) % 3 === 0 && 'bg-keyword-yellow/15 border-2 border-keyword-yellow text-keyword-yellow',
-                    (3 + 1) % 4 === 0 && 'bg-keyword-red/15 border-2 border-keyword-red text-keyword-red'
-                  )}
-                >
-                  getstarted
-                </div>
+                {(automation.keywords as KeywordType[]).map((keyword: KeywordType, index: number) => (
+                  <div
+                    key={keyword.id}
+                    className={cn(
+                      'rounded-full px-4 py-1 capitalize',
+                      (index + 1) % 4 === 1 && 'bg-keyword-green/15 border-2 border-keyword-green text-keyword-green',
+                      (index + 1) % 4 === 2 && 'bg-keyword-purple/15 border-2 border-keyword-purple text-keyword-purple',
+                      (index + 1) % 4 === 3 && 'bg-keyword-yellow/15 border-2 border-keyword-yellow text-keyword-yellow',
+                      (index + 1) % 4 === 0 && 'bg-keyword-red/15 border-2 border-keyword-red text-keyword-red'
+                    )}
+                  >
+                    {keyword.word}
+                  </div>
+                ))}
               </div>
             ) : (<div className="rounded-full border-2 mt-3 border-dashed border-white/60 px-3 py-1">
               <p className="text-sm text-[#bfc0c3]">No Keywords</p>

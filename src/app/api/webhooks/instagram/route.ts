@@ -22,32 +22,71 @@ export async function POST(req: NextRequest) {
   let matcher
   try {
     if (webhook_payload.entry[0].messaging) {
+      if (webhook_payload.entry[0].messaging[0]?.message?.is_echo) {
+        return NextResponse.json({ message: 'Echo message skipped' }, { status: 200 })
+      }
+
+      if (!webhook_payload.entry[0].messaging[0]?.message?.text) {
+        return NextResponse.json({ message: 'Empty message skipped' }, { status: 200 })
+      }
+
+      console.log('🔍 Processing messaging webhook:', {
+        messageType: 'messaging',
+        messageContent: webhook_payload.entry[0].messaging[0]?.message?.text,
+        senderId: webhook_payload.entry[0].messaging[0]?.sender?.id,
+        timestamp: new Date().toISOString()
+      })
       matcher = await matchKeyword(
         webhook_payload.entry[0].messaging[0].message.text
       )
+      console.log('Keyword matcher result:', matcher)
     }
 
     if (webhook_payload.entry[0].changes) {
+      if (!webhook_payload.entry[0].changes[0]?.value?.text) {
+        return NextResponse.json({ message: 'Empty change skipped' }, { status: 200 })
+      }
+
+      console.log('🔍 Processing changes webhook:', {
+        changeType: 'changes',
+        changeContent: webhook_payload.entry[0].changes[0]?.value?.text,
+        timestamp: new Date().toISOString()
+      })
       matcher = await matchKeyword(
         webhook_payload.entry[0].changes[0].value.text
       )
     }
 
-    if (matcher && matcher.automationId) {
-      console.log('Matched')
-      // We have a keyword matcher
+    if (!matcher && 
+        webhook_payload.entry[0].messaging && 
+        !webhook_payload.entry[0].messaging[0]?.message?.is_echo && 
+        webhook_payload.entry[0].messaging[0]?.message?.text) {
+      console.log('ℹ️ No keyword match for message:', {
+        timestamp: new Date().toISOString(),
+        messageContent: webhook_payload.entry[0].messaging[0].message.text
+      })
+    }
 
+    if (matcher && matcher.automationId) {
+      console.log('Matched keyword for automation:', matcher.automationId)
+      
       if (webhook_payload.entry[0].messaging) {
         const automation = await getKeywordAutomation(
           matcher.automationId,
           true
         )
+        console.log('Found automation:', {
+          id: automation?.id,
+          listener: automation?.listener?.listener,
+          subscription: automation?.User?.subscription?.plan
+        })
 
         if (automation && automation.trigger) {
           if (
             automation.listener &&
             automation.listener.listener === 'MESSAGE'
           ) {
+            console.log('Processing MESSAGE listener')
             const direct_message = await sendDM(
               webhook_payload.entry[0].id,
               webhook_payload.entry[0].messaging[0].sender.id,
@@ -56,6 +95,7 @@ export async function POST(req: NextRequest) {
             )
 
             if (direct_message.status === 200) {
+              console.log('MESSAGE: DM sent successfully')
               const tracked = await trackResponses(automation.id, 'DM')
               if (tracked) {
                 return NextResponse.json(
@@ -73,51 +113,72 @@ export async function POST(req: NextRequest) {
             automation.listener.listener === 'OMNIAI' &&
             automation.User?.subscription?.plan === 'PRO'
           ) {
-            const omni_ai_message = await mistralAI.chat.complete({
-              model: 'mistral-large-latest',
-              messages: [
-                {
-                  role: 'assistant',
-                  content: `${automation.listener?.prompt}: Keep responses under 2 sentences`,
-                },
-              ],
-            })
+            console.log('Starting Omni AI processing')
+            try {
+              const omni_ai_message = await mistralAI.chat.complete({
+                model: 'mistral-large-latest',
+                messages: [
+                  {
+                    role: 'system',
+                    content: automation.listener?.prompt || 'You are a helpful assistant'
+                  },
+                  {
+                    role: 'user',
+                    content: webhook_payload.entry[0].messaging[0].message.text
+                  }
+                ],
+              })
+              console.log('Omni AI response received:', omni_ai_message.choices[0].message.content)
 
-            if (omni_ai_message.choices[0].message.content) {
-              const reciever = createChatHistory(
-                automation.id,
-                webhook_payload.entry[0].id,
-                webhook_payload.entry[0].messaging[0].sender.id,
-                webhook_payload.entry[0].messaging[0].message.text
-              )
+              if (omni_ai_message.choices[0].message.content) {
+                console.log('Creating chat history')
+                const reciever = createChatHistory(
+                  automation.id,
+                  webhook_payload.entry[0].id,
+                  webhook_payload.entry[0].messaging[0].sender.id,
+                  webhook_payload.entry[0].messaging[0].message.text
+                )
 
-              const sender = createChatHistory(
-                automation.id,
-                webhook_payload.entry[0].id,
-                webhook_payload.entry[0].messaging[0].sender.id,
-                omni_ai_message.choices[0].message.content
-              )
+                const sender = createChatHistory(
+                  automation.id,
+                  webhook_payload.entry[0].id,
+                  webhook_payload.entry[0].messaging[0].sender.id,
+                  omni_ai_message.choices[0].message.content
+                )
 
-              await client.$transaction([reciever, sender])
+                await client.$transaction([reciever, sender])
+                console.log('Chat history created')
 
-              const direct_message = await sendDM(
-                webhook_payload.entry[0].id,
-                webhook_payload.entry[0].messaging[0].sender.id,
-                omni_ai_message.choices[0].message.content,
-                automation.User?.integrations[0].token!
-              )
+                console.log('Sending DM with Omni AI response')
+                const direct_message = await sendDM(
+                  webhook_payload.entry[0].id,
+                  webhook_payload.entry[0].messaging[0].sender.id,
+                  omni_ai_message.choices[0].message.content,
+                  automation.User?.integrations[0].token!
+                )
 
-              if (direct_message.status === 200) {
-                const tracked = await trackResponses(automation.id, 'DM')
-                if (tracked) {
-                  return NextResponse.json(
-                    {
-                      message: 'Message sent',
-                    },
-                    { status: 200 }
-                  )
+                if (direct_message.status === 200) {
+                  console.log('DM sent successfully')
+                  const tracked = await trackResponses(automation.id, 'DM')
+                  if (tracked) {
+                    return NextResponse.json(
+                      {
+                        message: 'Message sent',
+                      },
+                      { status: 200 }
+                    )
+                  }
                 }
               }
+            } catch (error) {
+              console.error('Error in Omni AI processing:', error)
+              return NextResponse.json(
+                {
+                  message: 'Error processing Omni AI request',
+                  error: error instanceof Error ? error.message : 'Unknown error'
+                },
+                { status: 500 }
+              )
             }
           }
         }

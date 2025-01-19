@@ -63,8 +63,10 @@ export const updateAutomationName = async (
     if (update) {
       return { status: 200, data: 'Automation successfully updated' }
     }
+    console.error('Failed to update automation:', { automationId, data })
     return { status: 404, data: 'Oops! could not find automation' }
   } catch (error) {
+    console.error('Error updating automation:', error instanceof Error ? error.message : 'Unknown error', { automationId, data })
     return { status: 500, data: 'Oops! something went wrong' }
   }
 }
@@ -90,8 +92,10 @@ export const saveTrigger = async (automationId: string, trigger: string[]) => {
   try {
     const create = await addTrigger(automationId, trigger)
     if (create) return { status: 200, data: 'Trigger saved' }
+    console.error('Failed to save trigger:', { automationId, trigger })
     return { status: 404, data: 'Cannot save trigger' }
   } catch (error) {
+    console.error('Error saving trigger:', error instanceof Error ? error.message : 'Unknown error', { automationId, trigger })
     return { status: 500, data: 'Oops! something went wrong' }
   }
 }
