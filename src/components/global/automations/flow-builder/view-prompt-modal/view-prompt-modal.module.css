@@ -1,0 +1,143 @@
+@keyframes contentShow {
+  from {
+    opacity: 0;
+    transform: translate(-50%, -48%) scale(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(1);
+  }
+}
+
+@keyframes overlayShow {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.dialogOverlay {
+  background-color: transparent;
+  position: fixed;
+  inset: 0;
+  animation: overlayShow 250ms cubic-bezier(0.16, 1, 0.3, 1);
+  backdrop-filter: blur(0.5px);
+  z-index: 49;
+}
+
+.dialogContent {
+  background-color: white;
+  border-radius: 28px;
+  box-shadow: 0 8px 60px -12px rgba(0, 0, 0, 0.08);
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 90vw;
+  max-width: 520px;
+  max-height: 90vh;
+  animation: contentShow 300ms cubic-bezier(0.16, 1, 0.3, 1);
+  z-index: 50;
+  display: flex;
+  flex-direction: column;
+}
+
+.dialogHeader {
+  opacity: 0;
+  transform: translateY(-10px);
+  animation: slideDown 400ms cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  animation-delay: 150ms;
+}
+
+.dialogBody {
+  opacity: 0;
+  transform: translateY(10px);
+  animation: slideUp 400ms cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  animation-delay: 250ms;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+}
+
+.promptContent {
+  background: rgba(255, 255, 255, 0.5);
+  border: 1px solid rgba(124, 58, 237, 0.1);
+  border-radius: 16px;
+  padding: 1rem;
+  margin-top: 0.5rem;
+  box-shadow: 
+    0 2px 4px rgba(0, 0, 0, 0.02),
+    inset 0 0 0 1px rgba(255, 255, 255, 0.1);
+  overflow-y: auto;
+  max-height: calc(70vh - 180px);
+  /* Hide scrollbar for Firefox */
+  scrollbar-width: none;
+  /* Hide scrollbar for IE/Edge */
+  -ms-overflow-style: none;
+}
+
+/* Hide scrollbar for Webkit browsers */
+.promptContent::-webkit-scrollbar {
+  display: none;
+}
+
+.promptText {
+  font-size: 0.9375rem;
+  line-height: 1.5;
+  color: #1f2937;
+  margin: 0;
+  white-space: pre-wrap;
+  word-break: break-word;
+  /* Remove right padding since we're hiding the scrollbar */
+  padding-right: 0;
+}
+
+.footer {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 1.5rem;
+  padding-top: 0.5rem;
+  border-top: 1px solid rgba(124, 58, 237, 0.1);
+  background: linear-gradient(to bottom, rgba(255, 255, 255, 0) 0%, rgba(255, 255, 255, 0.8) 50%);
+  position: sticky;
+  bottom: 0;
+  z-index: 1;
+}
+
+.editButton {
+  padding: 0.625rem 1.25rem;
+  border-radius: 12px;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: white;
+  background: linear-gradient(135deg, #7c3aed 0%, #6d28d9 100%);
+  border: none;
+  transition: all 0.2s ease;
+  box-shadow: 0 2px 4px rgba(124, 58, 237, 0.1);
+}
+
+.editButton:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(124, 58, 237, 0.2);
+}
+
+.editButton:active {
+  transform: translateY(0);
+}
+
+@keyframes slideDown {
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes slideUp {
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+} 

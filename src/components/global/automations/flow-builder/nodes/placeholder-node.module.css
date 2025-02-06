@@ -1,0 +1,127 @@
+.placeholderNode {
+  min-width: 180px;
+  background: rgba(255, 255, 255, 0.9);
+  border: 2px dashed #e2e8f0;
+  border-radius: 12px;
+  padding: 16px;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  cursor: pointer;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  backdrop-filter: blur(8px);
+  position: relative;
+  overflow: visible;
+}
+
+.content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  position: relative;
+  z-index: 1;
+}
+
+.iconWrapper {
+  width: 44px;
+  height: 44px;
+  background: #f8fafc;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+}
+
+.iconWrapper::before {
+  content: '';
+  position: absolute;
+  inset: -4px;
+  border-radius: 50%;
+  background: linear-gradient(45deg, #e2e8f0, #94a3b8);
+  opacity: 0;
+  transition: opacity 0.2s ease;
+}
+
+.icon {
+  width: 24px;
+  height: 24px;
+  color: #64748b;
+  transition: all 0.2s ease;
+  position: relative;
+  z-index: 1;
+}
+
+.text {
+  font-size: 14px;
+  font-weight: 500;
+  color: #64748b;
+  margin: 0;
+  text-align: center;
+  transition: color 0.2s ease;
+}
+
+.handle {
+  width: 8px;
+  height: 8px;
+  background: #94a3b8;
+  border: 2px solid white;
+  transition: all 0.2s ease;
+  left: -6px !important;
+  top: 50% !important;
+  transform: translateY(-50%);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+}
+
+/* Hover states */
+.placeholderNode:hover {
+  transform: translateY(-2px);
+  border-color: #94a3b8;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -2px rgba(0, 0, 0, 0.1);
+}
+
+.placeholderNode:hover .iconWrapper::before {
+  opacity: 0.1;
+}
+
+.placeholderNode:hover .icon {
+  color: #475569;
+  transform: scale(1.1);
+}
+
+.placeholderNode:hover .text {
+  color: #475569;
+}
+
+.placeholderNode:hover .handle {
+  background: #64748b;
+  transform: translateY(-50%) scale(1.2);
+}
+
+/* Focus states */
+.placeholderNode:focus {
+  outline: none;
+  border-color: #94a3b8;
+  box-shadow: 0 0 0 3px rgba(148, 163, 184, 0.2);
+}
+
+.placeholderNode:focus:not(:focus-visible) {
+  box-shadow: none;
+}
+
+/* Pulse animation */
+@keyframes pulse {
+  0% {
+    box-shadow: 0 0 0 0 rgba(148, 163, 184, 0.4);
+  }
+  70% {
+    box-shadow: 0 0 0 10px rgba(148, 163, 184, 0);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgba(148, 163, 184, 0);
+  }
+}
+
+.iconWrapper {
+  animation: pulse 2s infinite;
+} 
