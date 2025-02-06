@@ -1,6 +1,8 @@
 'use client';
 
 import { cn } from '@/lib/utils';
+import { ArrowUpIcon } from '@/icons/arrow-up-icon';
+import { ArrowDownIcon } from '@/icons/arrow-down-icon';
 
 interface StatItem {
   label: string;
@@ -87,13 +89,9 @@ export function StatsCard(props: SingleStatCardProps | MultiStatCardProps) {
                 change >= 0 ? "text-[#10B981]" : "text-[#F44336]"
               )}>
                 {change >= 0 ? (
-                  <svg className="w-3 h-3 mr-0.5" viewBox="0 0 24 24" fill="currentColor">
-                    <path d="M4 12l1.41 1.41L11 7.83V20h2V7.83l5.58 5.59L20 12l-8-8-8 8z"/>
-                  </svg>
+                  <ArrowUpIcon className="w-3 h-3 mr-0.5" />
                 ) : (
-                  <svg className="w-3 h-3 mr-0.5" viewBox="0 0 24 24" fill="currentColor">
-                    <path d="M20 12l-1.41-1.41L13 16.17V4h-2v12.17l-5.58-5.59L4 12l8 8 8-8z"/>
-                  </svg>
+                  <ArrowDownIcon className="w-3 h-3 mr-0.5" />
                 )}
                 {Math.abs(change)}%
               </span>

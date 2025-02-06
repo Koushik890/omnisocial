@@ -17,16 +17,30 @@ export const useMutationData = (
     const client = useQueryClient()
     const { mutate, isPending } = useMutation({
       mutationKey,
-      mutationFn,
+      mutationFn: async (variables: any) => {
+        if (!variables || typeof variables !== 'object') {
+          throw new Error('Invalid mutation variables');
+        }
+        const result = await mutationFn(variables);
+        if (!result) {
+          throw new Error('No response from server');
+        }
+        return result;
+      },
       onSuccess: (data) => {
-        if (onSuccess) onSuccess()
-        return toast(data?.status === 200 ? 'Success' : 'Error', {
-          description: data.data,
-        })
+        if (data?.status === 200) {
+          if (onSuccess) onSuccess();
+          if (queryKey) {
+            client.invalidateQueries({ queryKey: [queryKey] });
+          }
+        } else {
+          toast.error(data?.data || 'An error occurred');
+        }
       },
-      onSettled: async () => {
-        await client.invalidateQueries({ queryKey: [queryKey] })
-      },
+      onError: (error: Error) => {
+        console.error('Mutation error:', error);
+        toast.error(error.message || 'An error occurred');
+      }
     })
   
     return { mutate, isPending }

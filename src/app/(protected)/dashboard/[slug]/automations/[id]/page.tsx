@@ -1,7 +1,4 @@
 import React from "react";
-import AutomationsBreadCrumb from "@/components/global/bread-crumbs/automations";
-import { Warning } from '@/icons'
-import Trigger from "@/components/global/automations/trigger";
 import { getAutomationInfo } from "@/actions/automations";
 import { PrefetchUserAutomation } from "@/react-query/prefetch";
 import {
@@ -9,8 +6,7 @@ import {
     HydrationBoundary,
     QueryClient,
 } from '@tanstack/react-query'
-import PostNode from '@/components/global/automations/post/node'
-import ThenNode from '@/components/global/automations/then/node'
+import { AutomationClient } from "./client";
 
 interface PageProps {
     params: Promise<{
@@ -30,25 +26,12 @@ export async function generateMetadata({ params }: PageProps) {
 
 const Page = async ({ params }: PageProps) => {
     const resolvedParams = await params;
-    const automationId = resolvedParams.id;
-    
     const query = new QueryClient();
-    await PrefetchUserAutomation(query, automationId);
+    await PrefetchUserAutomation(query, resolvedParams.id);
 
     return (
         <HydrationBoundary state={dehydrate(query)}>
-            <div className="flex flex-col items-center gap-y-20">
-                <AutomationsBreadCrumb id={automationId} />
-                <div className="w-full lg:w-10/12 xl:w-6/12 p-5 rounded-xl flex flex-col bg-[#1D1D1D] gap-y-3 text-white">
-                    <div className="flex items-center gap-2">
-                        <Warning />
-                        When...
-                    </div>
-                    <Trigger id={automationId} />
-                </div>
-                <ThenNode id={automationId} />
-                <PostNode id={automationId} />
-            </div>
+            <AutomationClient id={resolvedParams.id} />
         </HydrationBoundary>
     );
 };

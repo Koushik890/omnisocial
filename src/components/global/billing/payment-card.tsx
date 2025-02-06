@@ -5,10 +5,13 @@ import React from "react"
 import { pricingPlans } from '@/components/sections/Pricing'
 import { CircleCheck } from 'lucide-react'
 import { Button } from "@/components/ui/button"
-import ArrowRight from '@/icons/ArrowRight'
+import { ArrowRightIcon } from '@/icons/arrow-right-icon'
 import { useLemonSqueezy } from '@/hooks/use-lemonsqueezy'
 import { useUser } from '@clerk/nextjs'
 import { SUBSCRIPTION_PLAN } from '@prisma/client'
+import { useQuery } from '@tanstack/react-query'
+import { onUserInfo } from '@/actions/user'
+import { useMutation } from '@tanstack/react-query'
 
 type props = {
     label: string
@@ -19,6 +22,29 @@ type props = {
 const PaymentCard = ({ label, current, landing }: props) => {
     const { user } = useUser();
     const { createCheckoutSession, isLoading } = useLemonSqueezy();
+    const { data: userData } = useQuery({
+        queryKey: ['user-profile'],
+        queryFn: onUserInfo,
+    })
+
+    const { mutate: createPortal } = useMutation({
+        mutationFn: async () => {
+            const res = await fetch('/api/payment/customer-portal', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    userId: userData?.data?.id,
+                }),
+            })
+            const data = await res.json()
+            return data
+        },
+        onSuccess: (data) => {
+            window.location.href = data.url
+        },
+    })
 
     const handleUpgrade = async () => {
         if (!user?.id || !user?.emailAddresses?.[0]?.emailAddress) return;
@@ -114,7 +140,7 @@ const PaymentCard = ({ label, current, landing }: props) => {
                         <span className="relative z-10 inline-flex items-center gap-2">
                             {isLoading ? 'Loading...' : (label === current ? 'Get Started' : label === 'PRO' ? 'Upgrade to Pro' : 'Continue with Free')}
                             <div className="w-5 h-5 rounded-full bg-white/10 flex items-center justify-center">
-                                <ArrowRight className="w-4 h-4" />
+                                <ArrowRightIcon className="w-4 h-4" />
                             </div>
                         </span>
                         {label === 'PRO' && (
@@ -146,7 +172,7 @@ const PaymentCard = ({ label, current, landing }: props) => {
                             </span>
                             {label !== current && !isLoading && (
                                 <div className="w-5 h-5 rounded-full bg-white/10 flex items-center justify-center">
-                                    <ArrowRight className="w-4 h-4" />
+                                    <ArrowRightIcon className="w-4 h-4" />
                                 </div>
                             )}
                         </span>

@@ -1,32 +1,23 @@
-import React from 'react';
-import PaymentButton from '@/components/global/payment-button';
+'use client'
 
-type Props = {};
+import React from 'react'
+import { Button } from '@/components/ui/button'
+import { ArrowRight } from 'lucide-react'
 
-const UpgradeCard = (props: Props) => {
+export default function UpgradeCard() {
   return (
-    <div className="relative bg-gradient-to-br from-[#2A2A2A] to-[#1A1A1A] p-4 rounded-2xl flex flex-col gap-y-3 border border-white/5 hover:border-white/10 transition-all duration-300 group overflow-hidden">
-      {/* Gradient overlay */}
-      <div className="absolute inset-0 bg-gradient-to-br from-[#A288F7]/10 to-[#F7C1E4]/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-      
-      <div className="relative flex flex-col items-center text-center">  
-        <span className="text-sm font-medium text-white/90">
-          Upgrade to{' '}
-          <span className="bg-gradient-to-r from-[#A288F7] to-[#F7C1E4] font-bold bg-clip-text text-transparent">
-            Omni AI
-          </span>
-        </span>
-        
-        <p className="text-[#9B9CA0] font-light text-sm mt-1">
-          Unlock all features <br /> including AI and more
-        </p>
-        
-        <div className="mt-4 w-full">  
-          <PaymentButton />
-        </div>
-      </div>
+    <div className="w-full p-4 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-lg text-white">
+      <h3 className="text-lg font-semibold mb-2">Upgrade to Pro</h3>
+      <p className="text-sm opacity-90 mb-4">
+        Get access to advanced automation features and unlimited usage.
+      </p>
+      <Button
+        variant="secondary"
+        className="w-full bg-white text-indigo-600 hover:bg-white/90 flex items-center justify-center gap-2"
+      >
+        Upgrade Now
+        <ArrowRight className="h-4 w-4" />
+      </Button>
     </div>
-  );
-};
-
-export default UpgradeCard;
+  )
+}

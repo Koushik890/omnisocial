@@ -1,41 +1,100 @@
-import { SIDEBAR_MENU } from '@/constants/menu';
-import { cn } from '@/lib/utils';
-import Link from 'next/link';
-import React from 'react';
+'use client'
 
-type Props = {
-  page: string;
-  slug: string;
-  isCollapsed?: boolean;
-};
+import React from 'react'
+import Link from 'next/link'
+import { usePathname } from 'next/navigation'
+import { cn } from '@/lib/utils'
+import { 
+  Home, 
+  Settings, 
+  Users, 
+  MessageSquare, 
+  BarChart2, 
+  Zap,
+  Calendar,
+  Bell
+} from 'lucide-react'
 
-const Items = ({ page, slug, isCollapsed }: Props) => {
-  const linkStyles = cn(
-    "flex rounded-full p-3 transition-all duration-200 hover:bg-white/10",
-    isCollapsed ? "justify-center" : "gap-x-2"
-  );
-  const activeLinkStyles = "bg-[#8D4AF3] text-white shadow-md";
-  const inactiveLinkStyles = "text-white/80";
+interface SidebarItem {
+  name: string
+  href: string
+  icon: React.ElementType
+}
+
+const items: SidebarItem[] = [
+  {
+    name: 'Dashboard',
+    href: '/dashboard',
+    icon: Home
+  },
+  {
+    name: 'Analytics',
+    href: '/analytics',
+    icon: BarChart2
+  },
+  {
+    name: 'Messages',
+    href: '/messages',
+    icon: MessageSquare
+  },
+  {
+    name: 'Automations',
+    href: '/automations',
+    icon: Zap
+  },
+  {
+    name: 'Schedule',
+    href: '/schedule',
+    icon: Calendar
+  },
+  {
+    name: 'Notifications',
+    href: '/notifications',
+    icon: Bell
+  },
+  {
+    name: 'Team',
+    href: '/team',
+    icon: Users
+  },
+  {
+    name: 'Settings',
+    href: '/settings',
+    icon: Settings
+  }
+]
+
+export default function Items() {
+  const pathname = usePathname()
 
   return (
-    <div className="flex flex-col gap-y-1">
-      {SIDEBAR_MENU.map((item) => (
-        <Link
-          key={item.id}
-          href={`/dashboard/${slug}/${item.label === 'home' ? '' : item.label}`}
-          className={cn(
-            linkStyles,
-            page === item.label || (page === slug && item.label === 'home')
-              ? activeLinkStyles
-              : inactiveLinkStyles
-          )}
-        >
-          {item.icon}
-          {!isCollapsed && <span className="capitalize">{item.label}</span>}
-        </Link>
-      ))}
-    </div>
-  );
-};
+    <nav className="space-y-1">
+      {items.map((item) => {
+        const Icon = item.icon
+        const isActive = pathname.includes(item.href)
 
-export default Items;
+        return (
+          <Link
+            key={item.name}
+            href={item.href}
+            className={cn(
+              'flex items-center gap-3 px-3 py-2 text-sm font-medium rounded-md transition-colors',
+              isActive 
+                ? 'bg-gray-100/80 text-gray-900'
+                : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
+            )}
+          >
+            <Icon 
+              className={cn(
+                'h-5 w-5 flex-shrink-0',
+                isActive ? 'text-gray-900' : 'text-gray-500'
+              )} 
+              strokeWidth={1.5}
+            />
+            {item.name}
+          </Link>
+        )
+      })}
+    </nav>
+  )
+}

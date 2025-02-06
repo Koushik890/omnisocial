@@ -1,13 +1,11 @@
 import type { Metadata } from 'next';
-import { Inter } from 'next/font/google';
 import { ClerkProvider } from '@clerk/nextjs';
 import './globals.css';
 import { ThemeProvider } from '@/providers/theme-provider';
 import { Toaster } from 'sonner';
 import ReactQueryProvider from '@/providers/react-query-provider';
 import ReduxProvider from '@/providers/redux-provider';
-
-const inter = Inter({ subsets: ['latin'] });
+import { raleway } from '@/lib/fonts';
 
 export const metadata: Metadata = {
   title: 'OmniSocial - Automate Your Social Media Engagement',
@@ -29,10 +27,10 @@ export default function RootLayout({
 }>) {
   return (
     <ClerkProvider>
-      <html lang="en" suppressHydrationWarning>
+      <html lang="en" suppressHydrationWarning className={`${raleway.variable} font-sans antialiased`}>
         <body
           suppressHydrationWarning
-          className={inter.className}>
+          className={`${raleway.className} font-sans antialiased`}>
           <ThemeProvider
             attribute="class"
             defaultTheme="dark"

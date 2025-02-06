@@ -1,5 +1,6 @@
 import { onIntegrate } from '@/actions/integrations'
 import { redirect } from 'next/navigation'
+import { UserProfile } from '@/types/user'
 
 interface PageProps {
   params: Promise<any>
@@ -12,13 +13,16 @@ async function Page({ searchParams }: PageProps) {
 
   if (code) {
     console.log(code)
-    const user = await onIntegrate(code.split('#_')[0])
-    if (user.status === 200) {
-      return redirect(
-        `/dashboard/${user.data?.firstname}${user.data?.lastname}/integrations`
-      )
+    const response = await onIntegrate(code.split('#_')[0])
+    
+    if (response.status === 200 && response.data) {
+      const { firstname, lastname } = response.data
+      if (firstname && lastname) {
+        return redirect(`/dashboard/${firstname}${lastname}/integrations`)
+      }
     }
   }
+  
   return redirect('/sign-up')
 }
 

@@ -9,6 +9,7 @@ import {
   addTrigger,
   createAutomation,
   deleteKeywordQuery,
+  deleteAutomationQuery,
   findAutomation,
   getAutomations,
   updateAutomation,
@@ -16,9 +17,19 @@ import {
 
 export const createAutomations = async (id?: string) => {
   const user = await onCurrentUser()
+  if (user.status !== 200 || !user.data) {
+    return { status: 401, data: 'Unauthorized' }
+  }
+
   try {
-    const create = await createAutomation(user.id, id)
-    if (create) return { status: 200, data: 'Automation created', res: create }
+    const automation = await createAutomation(user.data.id, id)
+    if (automation) {
+      return { 
+        status: 200, 
+        data: 'Automation created', 
+        res: automation 
+      }
+    }
 
     return { status: 404, data: 'Oops! something went wrong' }
   } catch (error) {
@@ -28,8 +39,12 @@ export const createAutomations = async (id?: string) => {
 
 export const getAllAutomations = async () => {
   const user = await onCurrentUser()
+  if (user.status !== 200 || !user.data) {
+    return { status: 401, data: [] }
+  }
+
   try {
-    const automations = await getAutomations(user.id)
+    const automations = await getAutomations(user.data.id)
     if (automations) return { status: 200, data: automations.automations }
     return { status: 404, data: [] }
   } catch (error) {
@@ -38,7 +53,11 @@ export const getAllAutomations = async () => {
 }
 
 export const getAutomationInfo = async (id: string) => {
-  await onCurrentUser()
+  const user = await onCurrentUser()
+  if (user.status !== 200 || !user.data) {
+    return { status: 401 }
+  }
+
   try {
     const automation = await findAutomation(id)
     if (automation) return { status: 200, data: automation }
@@ -57,12 +76,30 @@ export const updateAutomationName = async (
     automation?: string
   }
 ) => {
-  await onCurrentUser()
+  const user = await onCurrentUser()
+  if (user.status !== 200 || !user.data) {
+    return { status: 401, data: 'Unauthorized' }
+  }
+
   try {
-    const update = await updateAutomation(automationId, data)
+    if (!data || typeof data !== 'object') {
+      console.error('Invalid data payload:', { automationId, data });
+      return { status: 400, data: 'Invalid data payload' };
+    }
+
+    if (!data.name || typeof data.name !== 'string') {
+      console.error('Invalid name in payload:', { automationId, data });
+      return { status: 400, data: 'Name is required and must be a string' };
+    }
+
+    const update = await updateAutomation(automationId, {
+      name: data.name.trim()
+    });
+
     if (update) {
       return { status: 200, data: 'Automation successfully updated' }
     }
+
     console.error('Failed to update automation:', { automationId, data })
     return { status: 404, data: 'Oops! could not find automation' }
   } catch (error) {
@@ -77,7 +114,11 @@ export const saveListener = async (
   prompt: string,
   reply?: string
 ) => {
-  await onCurrentUser()
+  const user = await onCurrentUser()
+  if (user.status !== 200 || !user.data) {
+    return { status: 401, data: 'Unauthorized' }
+  }
+
   try {
     const create = await addListener(autmationId, listener, prompt, reply)
     if (create) return { status: 200, data: 'Listener created' }
@@ -88,7 +129,11 @@ export const saveListener = async (
 }
 
 export const saveTrigger = async (automationId: string, trigger: string[]) => {
-  await onCurrentUser()
+  const user = await onCurrentUser()
+  if (user.status !== 200 || !user.data) {
+    return { status: 401, data: 'Unauthorized' }
+  }
+
   try {
     const create = await addTrigger(automationId, trigger)
     if (create) return { status: 200, data: 'Trigger saved' }
@@ -101,7 +146,11 @@ export const saveTrigger = async (automationId: string, trigger: string[]) => {
 }
 
 export const saveKeyword = async (automationId: string, keyword: string) => {
-  await onCurrentUser()
+  const user = await onCurrentUser()
+  if (user.status !== 200 || !user.data) {
+    return { status: 401, data: 'Unauthorized' }
+  }
+
   try {
     const create = await addKeyWord(automationId, keyword)
 
@@ -114,7 +163,11 @@ export const saveKeyword = async (automationId: string, keyword: string) => {
 }
 
 export const deleteKeyword = async (id: string) => {
-  await onCurrentUser()
+  const user = await onCurrentUser()
+  if (user.status !== 200 || !user.data) {
+    return { status: 401, data: 'Unauthorized' }
+  }
+
   try {
     const deleted = await deleteKeywordQuery(id)
     if (deleted)
@@ -130,8 +183,12 @@ export const deleteKeyword = async (id: string) => {
 
 export const getProfilePosts = async () => {
   const user = await onCurrentUser()
+  if (user.status !== 200 || !user.data) {
+    return { status: 401 }
+  }
+
   try {
-    const profile = await findUser(user.id)
+    const profile = await findUser(user.data.id)
     const posts = await fetch(
       `${process.env.INSTAGRAM_BASE_URL}/me/media?fields=id,caption,media_url,media_type,timestamp&limit=10&access_token=${profile?.integrations[0].token}`
     )
@@ -154,7 +211,11 @@ export const savePosts = async (
     mediaType: 'IMAGE' | 'VIDEO' | 'CAROSEL_ALBUM'
   }[]
 ) => {
-  await onCurrentUser()
+  const user = await onCurrentUser()
+  if (user.status !== 200 || !user.data) {
+    return { status: 401, data: 'Unauthorized' }
+  }
+
   try {
     const create = await addPost(autmationId, posts)
 
@@ -167,16 +228,41 @@ export const savePosts = async (
 }
 
 export const activateAutomation = async (id: string, state: boolean) => {
-  await onCurrentUser()
+  const user = await onCurrentUser()
+  if (user.status !== 200 || !user.data) {
+    return { status: 401, data: 'Unauthorized' }
+  }
+
   try {
     const update = await updateAutomation(id, { active: state })
     if (update)
       return {
         status: 200,
-        data: `Automation ${state ? 'activated' : 'disabled'}`,
+        data: `Automation is now ${state ? 'Live' : 'Draft'}`,
       }
     return { status: 404, data: 'Automation not found' }
   } catch (error) {
     return { status: 500, data: 'Oops! something went wrong' }
+  }
+}
+
+export const deleteAutomation = async (id: string) => {
+  const user = await onCurrentUser()
+  if (user.status !== 200 || !user.data) {
+    return { status: 401, data: 'Unauthorized' }
+  }
+
+  try {
+    const deleted = await deleteAutomationQuery(id)
+    if (deleted) {
+      return {
+        status: 200,
+        data: 'Automation deleted successfully'
+      }
+    }
+    return { status: 404, data: 'Automation not found' }
+  } catch (error) {
+    console.error('Error deleting automation:', error)
+    return { status: 500, data: 'Failed to delete automation' }
   }
 }

@@ -47,12 +47,17 @@ export const createIntegration = async (
           token,
           expiresAt: expire,
           instagramId: igId,
+          name: 'INSTAGRAM',
         },
       },
     },
-    select: {
-      firstname: true,
-      lastname: true,
+    include: {
+      subscription: true,
+      integrations: {
+        where: {
+          name: 'INSTAGRAM',
+        },
+      },
     },
   })
 }

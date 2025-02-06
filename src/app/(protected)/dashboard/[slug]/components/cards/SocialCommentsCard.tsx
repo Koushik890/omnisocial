@@ -1,6 +1,8 @@
 'use client';
 
 import { CommentsList } from '../social/CommentsList';
+import { TrendUpIcon } from '@/icons/trend-up-icon';
+import { TrendDownIcon } from '@/icons/trend-down-icon';
 
 export function SocialCommentsCard() {
   return (
@@ -19,9 +21,7 @@ export function SocialCommentsCard() {
             <div className="flex items-center text-xs sm:text-sm">
               <span className="text-[#7E7E9A]">Local</span>
               <span className="ml-1 sm:ml-2 text-[#48C78E] flex items-center">
-                <svg className="w-2.5 h-2.5 sm:w-3 sm:h-3 mr-0.5 sm:mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 10l7-7m0 0l7 7m-7-7v18" />
-                </svg>
+                <TrendUpIcon className="w-2.5 h-2.5 sm:w-3 sm:h-3 mr-0.5 sm:mr-1" />
                 12%
               </span>
             </div>
@@ -31,9 +31,7 @@ export function SocialCommentsCard() {
             <div className="flex items-center justify-end text-xs sm:text-sm">
               <span className="text-[#7E7E9A]">Global</span>
               <span className="ml-1 sm:ml-2 text-[#FF6B6B] flex items-center">
-                <svg className="w-2.5 h-2.5 sm:w-3 sm:h-3 mr-0.5 sm:mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 14l-7 7m0 0l-7-7m7 7V3" />
-                </svg>
+                <TrendDownIcon className="w-2.5 h-2.5 sm:w-3 sm:h-3 mr-0.5 sm:mr-1" />
                 2%
               </span>
             </div>

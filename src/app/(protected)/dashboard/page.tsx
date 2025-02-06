@@ -1,16 +1,22 @@
-import { onBoardUser } from '@/actions/user'
+import { onUserInfo } from '@/actions/user'
 import { redirect } from 'next/navigation'
 import React from 'react'
 
-type Props = {}
+export const dynamic = 'force-dynamic'
 
-const Page = async (props: Props) => {
-  const user = await onBoardUser()
-  if (user.status === 200 || user.status === 201) {
-    return redirect(`dashboard/${user.data?.firstname}${user.data?.lastname}`)
+const Page = async () => {
+  const userInfo = await onUserInfo()
+  
+  if (userInfo.status === 200 && userInfo.data) {
+    const { firstname, lastname } = userInfo.data
+    if (!firstname || !lastname) {
+      // If user doesn't have a name set, redirect them to onboarding
+      redirect('/sign-up')
+    }
+    redirect(`/dashboard/${firstname}${lastname}`)
   }
 
-  return redirect('/sign-in')
+  redirect('/sign-in')
 }
 
 export default Page

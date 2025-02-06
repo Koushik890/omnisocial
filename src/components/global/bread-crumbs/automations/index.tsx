@@ -1,12 +1,18 @@
 'use client'
 import { ChevronRight, Menu, PencilIcon } from 'lucide-react'
 import React from 'react'
-import ActivateAutomationButton from '../../activate-automation-button'
 import { useQueryAutomation } from '@/hooks/user-queries'
 import { useEditAutomation } from '@/hooks/use-automations'
 import { useMutationDataState } from '@/hooks/use-mutation-data'
 import { Input } from '@/components/ui/input'
-import Sheet from '@/components/global/sheet'
+import { Button } from '@/components/ui/button'
+import {
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+  SheetTrigger,
+} from "@/components/ui/sheet"
 import { Separator } from '@/components/ui/separator'
 import ClerkAuthState from '@/components/global/clerk-auth-state'
 import { HelpDuoToneWhite } from '@/icons'
@@ -30,107 +36,140 @@ const AutomationsBreadCrumb = ({ id }: Props) => {
   const { page } = usePaths()
   const params = useParams()
   const slug = params?.slug as string
+  const [sidebarWidth, setSidebarWidth] = React.useState<number>(250)
+
+  React.useEffect(() => {
+    if (edit && inputRef.current) {
+      inputRef.current.select()
+    }
+  }, [edit])
+
+  React.useEffect(() => {
+    // Check initial sidebar state
+    const sidebar = document.querySelector('aside') as HTMLElement
+    if (sidebar) {
+      setSidebarWidth(sidebar.offsetWidth)
+    }
+
+    const handleSidebarChange = (event: CustomEvent<{ collapsed: boolean }>) => {
+      setSidebarWidth(event.detail.collapsed ? 72 : 250)
+    }
+
+    // Add event listener
+    window.addEventListener('sidebarStateChange', handleSidebarChange as EventListener)
+
+    // Cleanup
+    return () => {
+      window.removeEventListener('sidebarStateChange', handleSidebarChange as EventListener)
+    }
+  }, [])
 
   return (
-    <div className="rounded-full w-full p-5 bg-[#18181B1A] flex items-center">
-      <div className="flex items-center gap-x-3 min-w-0">
-        {/* Hamburger Menu - Only visible on mobile */}
-        <span className="lg:hidden flex items-center">
-          <Sheet
-            trigger={<Menu className="h-6 w-6 text-[#9B9CA0] hover:text-[#6F1FB6] transition-colors" />}
-            className="lg:hidden"
-            side="left"
-            title="Navigation Menu"
-          >
-            <div className="flex flex-col gap-y-5 w-full h-full bg-gradient-to-b from-[#A288F7] via-[#A288F7]/95 to-[#F7C1E4] backdrop-filter backdrop-blur-xl">
-              <div className="flex items-center justify-center transition-all duration-300 mt-4 h-[40px] px-3">
-                <Image 
-                  src="/logo.png"
-                  alt="Logo"
-                  width={150}
-                  height={32}
-                  className="transition-all duration-300"
-                />
-              </div>
-              <div className="flex flex-col py-3">
-                <Items page={page} slug={slug} />
-              </div>
-              <div className="px-16">
-                <Separator
-                  orientation="horizontal"
-                  className="bg-white/20"
-                />
-              </div>
-              <div className="flex flex-col gap-y-2 px-3">
-                <ClerkAuthState />
-                <Link
-                  href={`/dashboard/${slug}/help`}
-                  className={cn(
-                    "flex items-center gap-x-3 rounded-full p-2.5 transition-all duration-200 hover:bg-white/10",
-                    page === 'help' ? "bg-[#8D4AF3] text-white shadow-md" : "text-white/80"
-                  )}
-                >
-                  <div className="flex items-center justify-center h-9 w-9 ring-2 ring-white/30 rounded-full">
-                    <HelpDuoToneWhite />
+    <div 
+      className="fixed top-0 h-[70px] bg-gradient-to-br from-[#f5f5f5] to-[#ffffff] backdrop-blur-md border-b border-gray-200/20 z-50 transition-all duration-300 flex items-center px-6"
+      style={{ 
+        left: `${sidebarWidth}px`,
+        right: '0'
+      }}
+    >
+      <div className="flex items-center justify-between w-full">
+        {/* Left: Menu & Breadcrumb */}
+        <div className="flex items-center gap-4">
+          <span className="lg:hidden">
+            <Sheet>
+              <SheetTrigger asChild>
+                <button className="p-1 hover:bg-gray-50/80 rounded-md transition-colors">
+                  <Menu className="h-6 w-6 text-gray-900" />
+                </button>
+              </SheetTrigger>
+              <SheetContent side="left" className="w-[300px] p-0">
+                <div className="flex flex-col gap-y-5 w-full h-full bg-gradient-to-b from-[#A288F7] via-[#A288F7]/95 to-[#F7C1E4] backdrop-filter backdrop-blur-xl">
+                  <div className="flex items-center justify-center transition-all duration-300 mt-4 h-[40px] px-3">
+                    <Image 
+                      src="/logo.png"
+                      alt="Logo"
+                      width={150}
+                      height={32}
+                      className="transition-all duration-300"
+                    />
                   </div>
-                  <span className="font-medium">Help</span>
-                </Link>
-              </div>
-              <div className="flex-1" />
-              <SubscriptionPlan type="FREE">
-                <UpgradeCard />
-              </SubscriptionPlan>
-            </div>
-          </Sheet>
-        </span>
-
-        <div className="flex items-center gap-x-3">
-          <p className="text-[#9B9CA0] truncate">Automations</p>
-          <ChevronRight
-            className="flex-shrink-0"
-            color="#9B9CA0"
-          />
-        </div>
-        <span className="flex gap-x-3 items-center min-w-0">
-          {edit ? (
-            <Input
-              ref={inputRef}
-              placeholder={
-                isPending ? latestVariable.variables : 'Add a new name'
-              }
-              className="bg-transparent h-auto outline-none text-base border-none p-0"
-            />
-          ) : (
-            <p className="text-[#9B9CA0] truncate">
-              {latestVariable?.variables
-                ? latestVariable?.variables.name
-                : data?.data?.name}
-            </p>
-          )}
-          {edit ? (
-            <></>
-          ) : (
-            <span
-              className="cursor-pointer hover:opacity-75 duration-100 transition flex-shrink-0 mr-4"
-              onClick={enableEdit}
-            >
-              <PencilIcon size={14} />
+                  <div className="flex flex-col py-3">
+                    <Items />
+                  </div>
+                  <div className="px-16">
+                    <Separator
+                      orientation="horizontal"
+                      className="bg-white/20"
+                    />
+                  </div>
+                  <div className="flex flex-col gap-y-2 px-3">
+                    <ClerkAuthState />
+                    <Link
+                      href={`/dashboard/${slug}/help`}
+                      className={cn(
+                        "flex items-center gap-x-3 rounded-full p-2.5 transition-all duration-200 hover:bg-white/10",
+                        page === 'help' ? "bg-[#8D4AF3] text-white shadow-md" : "text-white/80"
+                      )}
+                    >
+                      <div className="flex items-center justify-center h-9 w-9 ring-2 ring-white/30 rounded-full">
+                        <HelpDuoToneWhite />
+                      </div>
+                      <span className="font-medium">Help</span>
+                    </Link>
+                  </div>
+                  <div className="flex-1" />
+                  <SubscriptionPlan type="FREE">
+                    <UpgradeCard />
+                  </SubscriptionPlan>
+                </div>
+              </SheetContent>
+            </Sheet>
+          </span>
+          <div className="flex items-center gap-2">
+            <span className="text-[24px] font-[600] leading-[24px] font-raleway text-gray-900">
+              Automations
             </span>
-          )}
-        </span>
-      </div>
+            <ChevronRight className="h-6 w-6 text-gray-900" />
+            <div className="text-[24px] font-[600] leading-[24px] font-raleway text-gray-900">
+              {edit ? (
+                <Input
+                  ref={inputRef}
+                  autoFocus
+                  defaultValue={latestVariable?.variables?.name || data?.data?.name || 'Untitled'}
+                  placeholder={isPending ? latestVariable.variables : 'Add a new name'}
+                  className="bg-transparent h-auto outline-none text-[24px] leading-[24px] border-none p-0 font-raleway font-[600] text-center placeholder:text-center text-gray-900"
+                />
+              ) : (
+                <div className="flex items-center gap-2">
+                  <span>{latestVariable?.variables?.name || data?.data?.name || 'Untitled'}</span>
+                  {!edit && (
+                    <button
+                      onClick={enableEdit}
+                      className="p-1 hover:bg-gray-50/80 rounded-md transition-colors"
+                    >
+                      <PencilIcon className="h-5 w-5 text-gray-900" />
+                    </button>
+                  )}
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
 
-      <div className="flex items-center gap-x-5 ml-auto">
-        <p className="hidden md:block text-text-secondary/60 text-sm truncate min-w-0">
-          All states are automatically saved
-        </p>
-        <div className="flex gap-x-5 flex-shrink-0">
-          <p className="text-text-secondary text-sm truncate min-w-0">
+        {/* Right: Status & Actions */}
+        <div className="flex items-center gap-4">
+          <p className="text-[14px] font-medium leading-[20px] font-['Plus_Jakarta_Sans'] text-gray-900">
             Changes Saved
           </p>
+          <Button 
+            variant="default" 
+            size="sm"
+            className="bg-[#8D4AF3] hover:bg-[#8D4AF3]/90 text-white font-medium"
+          >
+            Activate
+          </Button>
         </div>
       </div>
-      <ActivateAutomationButton id={id} />
     </div>
   )
 }

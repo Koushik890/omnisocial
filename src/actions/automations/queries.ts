@@ -1,22 +1,32 @@
-
 'use server'
 
 import { client } from '@/lib/prisma'
 import { v4 } from 'uuid'
 
 export const createAutomation = async (clerkId: string, id?: string) => {
-  return await client.user.update({
+  const newId = id || v4();
+  const result = await client.user.update({
     where: {
       clerkId,
     },
     data: {
       automations: {
         create: {
-          ...(id && { id }),
+          id: newId,
+          name: 'Untitled'
         },
       },
     },
-  })
+    select: {
+      automations: {
+        where: {
+          id: newId
+        }
+      }
+    }
+  });
+  
+  return result.automations[0];
 }
 
 export const getAutomations = async (clerkId: string) => {
@@ -65,13 +75,45 @@ export const updateAutomation = async (
     active?: boolean
   }
 ) => {
-  return await client.automation.update({
-    where: { id },
-    data: {
-      name: update.name,
-      active: update.active,
-    },
-  })
+  if (!id || typeof id !== 'string') {
+    throw new Error('Invalid automation ID');
+  }
+
+  if (!update || typeof update !== 'object') {
+    throw new Error('Invalid update payload');
+  }
+
+  try {
+    const data: Record<string, any> = {};
+    
+    if (update.name !== undefined) {
+      if (typeof update.name !== 'string') {
+        throw new Error('Name must be a string');
+      }
+      data.name = update.name.trim();
+    }
+    
+    if (update.active !== undefined) {
+      if (typeof update.active !== 'boolean') {
+        throw new Error('Active must be a boolean');
+      }
+      data.active = update.active;
+    }
+
+    const result = await client.automation.update({
+      where: { id },
+      data
+    });
+
+    if (!result) {
+      throw new Error('Failed to update automation');
+    }
+
+    return result;
+  } catch (error) {
+    console.error('Error in updateAutomation:', error);
+    throw error;
+  }
 }
 
 export const addListener = async (
@@ -164,5 +206,11 @@ export const addPost = async (
         },
       },
     },
+  })
+}
+
+export const deleteAutomationQuery = async (id: string) => {
+  return await client.automation.delete({
+    where: { id },
   })
 }

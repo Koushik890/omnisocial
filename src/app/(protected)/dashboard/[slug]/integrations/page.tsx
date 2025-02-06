@@ -1,5 +1,5 @@
 import { INTEGRATION_CARDS } from '@/constants/integrations'
-import IntegrationCard from './_components/integration-card/page'
+import IntegrationCard from './_components/integration-card'
 import React from 'react'
 
 const IntegrationsPage = () => {

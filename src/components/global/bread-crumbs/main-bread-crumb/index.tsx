@@ -1,5 +1,4 @@
 import { PAGE_ICON } from '@/constants/pages'
-import { Settings } from '@/icons/settings'
 import React from 'react'
 
 type Props = {
@@ -8,40 +7,31 @@ type Props = {
 }
 
 const MainBreadCrumb = ({ page, slug }: Props) => {
-  // Extract first name by finding the position where the case changes from lower to upper
-  const getFirstName = (name?: string) => {
-    if (!name) return ''
-    const upperCaseIndex = name.split('').findIndex((char, i) => 
-      i > 0 && char === char.toUpperCase()
-    )
-    return upperCaseIndex > 0 ? name.slice(0, upperCaseIndex) : name
+  const normalizedPage = page.toLowerCase()
+  
+  const capitalizeFirstLetter = (str: string) => {
+    return str.charAt(0).toUpperCase() + str.slice(1).toLowerCase()
   }
 
-  const firstName = getFirstName(slug)
-
-  const normalizedPage = page.toLowerCase()
-
-  if (normalizedPage === 'home') {
+  if (normalizedPage === 'home' || normalizedPage === 'automations') {
     return (
       <div className="flex flex-col items-start">
-        <div className="flex justify-center w-full">
-          <div className="flex flex-col">
-            <h1 className="flex items-center gap-2 text-xl font-semibold text-[#2D2D2D]">
-              Welcome back{firstName && `, ${firstName}!`}
-            </h1>
-            <p className="text-sm text-[#6B7280]">Here&apos;s what&apos;s happening with your social media accounts today.</p>
-          </div>
+        <div className="flex items-center">
+          <h1 className="min-w-[55px] h-[40px] font-['Plus_Jakarta_Sans',-apple-system,BlinkMacSystemFont,'Segoe_UI',Roboto,'Helvetica_Neue',Helvetica,Arial,sans-serif] text-[32px] font-semibold leading-[40px] tracking-tight text-start text-[#282d47] bg-clip-text">
+            {capitalizeFirstLetter(page)}
+          </h1>
         </div>
       </div>
     )
   }
 
-  if (normalizedPage === 'settings' || normalizedPage === 'integrations' || normalizedPage === 'automations') {
+  if (normalizedPage === 'settings' || normalizedPage === 'integrations') {
     return (
       <div className="flex flex-col items-start">
-        <div className="flex items-center gap-2">
-          {normalizedPage === 'settings' ? <Settings /> : PAGE_ICON[page.toUpperCase()]}
-          <h2 className="font-semibold text-xl text-[#2D2D2D] capitalize">{page}</h2>
+        <div className="flex items-center">
+          <h2 className="min-w-[55px] h-[40px] font-['Plus_Jakarta_Sans',-apple-system,BlinkMacSystemFont,'Segoe_UI',Roboto,'Helvetica_Neue',Helvetica,Arial,sans-serif] text-[32px] font-semibold leading-[40px] tracking-tight text-start text-[#282d47] bg-clip-text">
+            {capitalizeFirstLetter(page)}
+          </h2>
         </div>
       </div>
     )
@@ -49,9 +39,10 @@ const MainBreadCrumb = ({ page, slug }: Props) => {
 
   return (
     <div className="flex flex-col items-start">
-      <span className="bg-gradient-to-br from-[#F3EAFD] to-[#FCE8F7] backdrop-blur-lg shadow-[0_2px_8px_rgba(162,136,247,0.1)] rounded-3xl border border-[#E5E5E5] inline-flex py-5 lg:py-10 px-8 gap-x-2 items-center">
-        {PAGE_ICON[page.toUpperCase()]}
-        <h2 className="font-semibold text-3xl capitalize text-[#2D2D2D]">{page}</h2>
+      <span className="bg-gradient-to-br from-[#F3EAFD] to-[#FCE8F7] backdrop-blur-lg shadow-[0_2px_8px_rgba(162,136,247,0.1)] rounded-3xl border border-[#E5E5E5] inline-flex py-5 lg:py-10 px-8 items-center">
+        <h2 className="min-w-[55px] h-[40px] font-['Plus_Jakarta_Sans',-apple-system,BlinkMacSystemFont,'Segoe_UI',Roboto,'Helvetica_Neue',Helvetica,Arial,sans-serif] text-[32px] font-semibold leading-[40px] tracking-tight text-start text-[#282d47] bg-clip-text">
+          {capitalizeFirstLetter(page)}
+        </h2>
       </span>
     </div>
   )

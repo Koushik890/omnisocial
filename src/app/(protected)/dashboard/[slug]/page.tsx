@@ -1,38 +1,44 @@
-import { RecentPostsCard } from './components/cards/RecentPostsCard';
+'use client';
+
 import { AutomatedActivityCard } from './components/cards/AutomatedActivityCard';
-import { SetupAutoRepliesCard } from './components/cards/SetupAutoRepliesCard';
-import { AnswerQuestionsCard } from './components/cards/AnswerQuestionsCard';
-import { TotalCommentsCard } from './components/cards/TotalCommentsCard';
-import { CommentRepliesCard } from './components/cards/CommentRepliesCard';
+import { useQuery } from '@tanstack/react-query';
+import { onUserInfo } from '@/actions/user';
+import { format } from 'date-fns';
 
 export default function DashboardPage() {
+  const { data: userInfo } = useQuery({
+    queryKey: ['user-profile'],
+    queryFn: onUserInfo,
+  });
+
+  const getGreeting = () => {
+    const hour = new Date().getHours();
+    if (hour < 12) return 'Good Morning';
+    if (hour < 18) return 'Good Afternoon';
+    return 'Good Evening';
+  };
+
+  const firstName = userInfo?.data?.firstname || '';
+  const today = new Date();
+  const dayAndDate = format(today, 'EEEE, MMMM d');
+
   return (
-    <div className="space-y-6 px-4 sm:px-6 lg:px-8">
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6">
-        {/* First Column with Extended Automated Activity */}
-        <div className="lg:col-span-2">
-          <div className="h-full">
-            <AutomatedActivityCard className="h-full" />
+    <div className="w-full pt-[49px]">
+      <div className="flex flex-col items-center">
+        <h2 className="block w-[1200px] h-[20px] mb-1 text-center text-[16px] font-medium leading-[20px] font-['Plus_Jakarta_Sans',-apple-system,BlinkMacSystemFont,'Segoe_UI',Roboto,'Helvetica_Neue',Helvetica,Arial,sans-serif] text-[#282d47]">
+          {dayAndDate}
+        </h2>
+        <h1 className="block w-[1200px] h-[40px] m-0 p-0 text-center text-[32px] font-medium leading-[40px] font-['Plus_Jakarta_Sans',-apple-system,BlinkMacSystemFont,'Segoe_UI',Roboto,'Helvetica_Neue',Helvetica,Arial,sans-serif] text-[#282d47]">
+          {getGreeting()}, {firstName}
+        </h1>
+      </div>
+      <div className="mt-8 flex justify-center">
+        <div className="w-[1200px] flex">
+          <div className="w-[900px]">
+            <div className="pl-[8px]">
+              <AutomatedActivityCard className="h-full" />
+            </div>
           </div>
-        </div>
-
-        {/* Action Cards Column */}
-        <div className="lg:col-span-1">
-          <div className="flex flex-col justify-between space-y-4 sm:space-y-6">
-            <SetupAutoRepliesCard />
-            <AnswerQuestionsCard />
-          </div>
-        </div>
-
-        {/* Left Column for Stats */}
-        <div className="lg:col-span-1 space-y-4 sm:space-y-6">
-          <TotalCommentsCard />
-          <CommentRepliesCard />
-        </div>
-
-        {/* Recent Posts - Extended */}
-        <div className="lg:col-span-2">
-          <RecentPostsCard />
         </div>
       </div>
     </div>

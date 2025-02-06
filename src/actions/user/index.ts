@@ -1,28 +1,77 @@
 'use server'
 
 import { currentUser } from '@clerk/nextjs/server'
-
 import { redirect } from 'next/navigation'
-import { createUser, findUser, updateSubscription } from './queries'
+import { findUser } from './queries'
+import { createUser, updateSubscription } from './queries'
 import { refreshToken } from '@/lib/fetch'
 import { updateIntegration } from '../integrations/queries'
+import { UserResponse } from '@/types/user'
 
+const MAX_RETRIES = 3
+const RETRY_DELAY = 1000 // 1 second
+
+async function delay(ms: number) {
+  return new Promise(resolve => setTimeout(resolve, ms))
+}
+
+async function retryOperation<T>(
+  operation: () => Promise<T>,
+  retries: number = MAX_RETRIES,
+  delayMs: number = RETRY_DELAY
+): Promise<T> {
+  try {
+    return await operation()
+  } catch (error) {
+    if (retries > 0) {
+      await delay(delayMs)
+      return retryOperation(operation, retries - 1, delayMs)
+    }
+    throw error
+  }
+}
 
 export const onCurrentUser = async () => {
-  const user = await currentUser()
-  if (!user) return redirect('/sign-in')
+  try {
+    const user = await currentUser()
+    if (!user) {
+      console.warn('No user session found')
+      return { status: 401 }
+    }
 
-  return user
+    return { status: 200, data: user }
+  } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error'
+    console.error('Error in onCurrentUser:', {
+      message: errorMessage,
+      timestamp: new Date().toISOString()
+    })
+    return { status: 500 }
+  }
 }
 
 export const onBoardUser = async () => {
   const user = await onCurrentUser()
+  if (user.status !== 200 || !user.data) {
+    return { status: 401 }
+  }
+
+  // Check if we have all required user data
+  if (!user.data.firstName || !user.data.lastName || !user.data.emailAddresses?.[0]?.emailAddress) {
+    console.error('Missing required user data:', {
+      firstName: user.data.firstName,
+      lastName: user.data.lastName,
+      email: user.data.emailAddresses?.[0]?.emailAddress
+    })
+    return { status: 400, error: 'Missing required user data' }
+  }
+
   try {
     const created = await createUser(
-      user.id,
-      user.firstName!,
-      user.lastName!,
-      user.emailAddresses[0].emailAddress
+      user.data.id,
+      user.data.firstName,
+      user.data.lastName,
+      user.data.emailAddresses[0].emailAddress
     )
     
     return { 
@@ -35,15 +84,32 @@ export const onBoardUser = async () => {
   }
 }
 
-export const onUserInfo = async () => {
-  const user = await onCurrentUser()
+export const onUserInfo = async (): Promise<UserResponse> => {
   try {
-    const profile = await findUser(user.id)
-    if (profile) return { status: 200, data: profile }
+    const user = await onCurrentUser()
+    if (user.status !== 200 || !user.data) {
+      return { status: 401 }
+    }
+
+    const profile = await retryOperation(async () => {
+      const result = await findUser(user.data.id)
+      if (!result) {
+        throw new Error('User not found')
+      }
+      return result
+    })
+
+    if (profile) {
+      return { status: 200, data: profile }
+    }
 
     return { status: 404 }
   } catch (error) {
-    console.error('Error in onUserInfo:', error instanceof Error ? error.message : 'Unknown error');
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error'
+    console.error('Error in onUserInfo:', {
+      message: errorMessage,
+      timestamp: new Date().toISOString()
+    })
     return { status: 500 }
   }
 }
