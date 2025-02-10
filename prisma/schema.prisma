@@ -54,6 +54,7 @@ model Automation {
   id        String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   name      String    @default("Untitled")
   createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
   active    Boolean   @default(false)
   trigger   Trigger[]
   listener  Listener?
@@ -62,6 +63,8 @@ model Automation {
   User      User?     @relation(fields: [userId], references: [id], onDelete: Cascade)
   userId    String?   @db.Uuid
   keywords  Keyword[]
+  config    Json?
+  status    AutomationStatus @default(DRAFT)
 }
 
 model Dms {
@@ -98,6 +101,7 @@ model Listener {
 model Trigger {
   id           String      @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   type         String
+  config       Json?       @db.JsonB
   Automation   Automation? @relation(fields: [automationId], references: [id], onDelete: Cascade)
   automationId String?     @db.Uuid
 }
@@ -136,4 +140,10 @@ enum SUBSCRIPTION_STATUS {
   PAST_DUE
   CANCEL_AT_PERIOD_END
   DELETED
+}
+
+enum AutomationStatus {
+  DRAFT
+  PUBLISHED
+  ARCHIVED
 }

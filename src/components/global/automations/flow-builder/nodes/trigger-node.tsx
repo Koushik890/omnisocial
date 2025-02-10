@@ -1,38 +1,56 @@
 'use client'
 
-import React, { useState } from 'react'
-import { Handle, Position } from 'reactflow'
+import React, { useState, useEffect } from 'react'
+import { Handle, Position, NodeProps } from 'reactflow'
 import { Card } from '@/components/ui/card'
-import { Zap, LucideIcon } from 'lucide-react'
+import { Zap, LucideIcon, Plus, Settings, X } from 'lucide-react'
 import { AutomationKeyword } from '@/types/automation'
 import { Button } from '@/components/ui/button'
 import { TriggerSidebar } from '../trigger-sidebar'
-import { FlowConfigSidebar } from '../flow-config-sidebar'
 import { ActionModal } from '../action-modal'
 import styles from './trigger-node.module.css'
 import { motion } from 'framer-motion'
 import { TriggerSidebarProps } from '../trigger-sidebar'
 
-interface TriggerNodeProps {
-  data: {
-    type: string
-    keywords: AutomationKeyword[]
-    selectedActions?: Array<{ id: string; name: string; icon: React.ComponentType<any> }>
-    selectedTriggers?: Array<{ id: string; name: string; icon: React.ComponentType<any> }>
-    onTriggerSelect?: (triggerId: string, triggerName: string, icon: React.ComponentType<any>) => void
-    onTriggerRemove?: (triggerId: string) => void
-    onActionSelect?: (actionId: string, action: 'MESSAGE' | 'OMNIAI', actionName: string, icon: React.ComponentType<any>) => void
-    onActionRemove?: (actionId: string) => void
-    isConfigSidebarOpen?: boolean
-    onConfigSidebarClose?: () => void
-    onConfigSidebarOpen?: () => void
-    isTriggerSidebarOpen?: boolean
-    onTriggerSidebarOpen?: () => void
-    onTriggerSidebarClose?: () => void
-  }
+interface TriggerNodeData {
+  type: string
+  keywords: any[]
+  selectedTriggers: Array<TriggerItem>
+  onTriggerSelect: (triggerId: string, triggerName: string, icon: React.ComponentType<any>) => void
+  onTriggerRemove: (triggerId: string) => void
+  isConfigSidebarOpen: boolean
+  onConfigSidebarClose: () => void
+  onConfigSidebarOpen: () => void
+  isTriggerSidebarOpen: boolean
+  onTriggerSidebarOpen: () => void
+  onTriggerSidebarClose: () => void
+  onTriggerConfigurationOpen: (trigger: TriggerItem) => void
+  onActionSelect?: (actionId: string, action: 'MESSAGE' | 'OMNIAI', actionName: string, icon: React.ComponentType<any>) => void
+  config?: any
+  configurationStatus: 'unconfigured' | 'partial' | 'complete'
 }
 
-export const TriggerNode: React.FC<TriggerNodeProps> = ({ data }) => {
+interface TriggerItem {
+  id: string
+  name: string
+  icon: React.ComponentType<any>
+}
+
+export function TriggerNode({ data }: NodeProps<TriggerNodeData>) {
+  const {
+    selectedTriggers,
+    onTriggerSelect,
+    onTriggerRemove,
+    isConfigSidebarOpen,
+    onConfigSidebarClose,
+    onConfigSidebarOpen,
+    isTriggerSidebarOpen,
+    onTriggerSidebarOpen,
+    onTriggerSidebarClose,
+    onTriggerConfigurationOpen,
+    config
+  } = data
+
   const [isActionModalOpen, setIsActionModalOpen] = useState(false)
 
   const handleNodeClick = (e: React.MouseEvent) => {
@@ -43,12 +61,34 @@ export const TriggerNode: React.FC<TriggerNodeProps> = ({ data }) => {
     }
   }
 
+  const handleTriggerClick = (trigger: { id: string; name: string; icon: React.ComponentType<any> }) => {
+    if (data.onTriggerConfigurationOpen) {
+      data.onTriggerConfigurationOpen(trigger)
+    }
+  }
+
+  const getStatusIndicator = (status: 'unconfigured' | 'partial' | 'complete') => {
+    const baseClasses = "w-2 h-2 rounded-full absolute right-2 top-2"
+    switch (status) {
+      case 'complete':
+        return <div className={`${baseClasses} bg-green-500 ring-2 ring-green-200`} title="Fully configured" />
+      case 'partial':
+        return <div className={`${baseClasses} bg-yellow-500 ring-2 ring-yellow-200`} title="Partially configured" />
+      case 'unconfigured':
+      default:
+        return <div className={`${baseClasses} bg-gray-400 ring-2 ring-gray-200`} title="Not configured" />
+    }
+  }
+
   return (
     <>
       <Card 
         className={styles.triggerNode}
         onClick={handleNodeClick}
       >
+        {/* Status Indicator */}
+        {selectedTriggers.length > 0 && getStatusIndicator(data.configurationStatus)}
+
         {/* Header with Icon and Title */}
         <div className={styles.header}>
           <div className={styles.iconWrapper}>
@@ -60,15 +100,19 @@ export const TriggerNode: React.FC<TriggerNodeProps> = ({ data }) => {
         </div>
 
         {/* Description or Selected Triggers */}
-        {data.selectedTriggers && data.selectedTriggers.length > 0 ? (
+        {selectedTriggers.length > 0 ? (
           <div className={styles.selectedTriggers}>
-            {data.selectedTriggers.map((trigger) => (
+            {selectedTriggers.map((trigger) => (
               <motion.div
                 key={trigger.id}
-                className={styles.selectedTrigger}
+                className={`${styles.selectedTrigger} ${styles.clickable}`}
                 initial={{ opacity: 0, y: -10 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.2 }}
+                onClick={(e) => {
+                  e.stopPropagation()
+                  handleTriggerClick(trigger)
+                }}
               >
                 <div className={styles.triggerIconWrapper}>
                   <trigger.icon className={styles.triggerIcon} />
@@ -86,18 +130,20 @@ export const TriggerNode: React.FC<TriggerNodeProps> = ({ data }) => {
         )}
 
         {/* Add Trigger Button */}
-        <Button
-          variant="ghost"
-          className={styles.addTrigger}
-          onClick={(e) => {
-            e.stopPropagation()
-            if (data.onTriggerSidebarOpen) {
-              data.onTriggerSidebarOpen()
-            }
-          }}
-        >
-          <span className={styles.buttonContent}>+ New Trigger</span>
-        </Button>
+        {selectedTriggers.length === 0 && (
+          <Button
+            variant="ghost"
+            className={styles.addTrigger}
+            onClick={(e) => {
+              e.stopPropagation()
+              if (data.onTriggerSidebarOpen) {
+                data.onTriggerSidebarOpen()
+              }
+            }}
+          >
+            <span className={styles.buttonContent}>+ New Trigger</span>
+          </Button>
+        )}
 
         {/* Then text with flow indicator */}
         <div className={styles.flowIndicator}>

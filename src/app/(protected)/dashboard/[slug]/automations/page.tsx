@@ -146,7 +146,7 @@ export default function AutomationsPage() {
   // Handle automation creation
   const handleCreateAutomation = async () => {
     try {
-      createAutomation({}, {
+      createAutomation({ id: undefined }, {
         onSuccess: (data: any) => {
           // Check if we have a valid automation ID
           const automationId = data?.res?.id;

@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import { cn } from '@/lib/utils'
+import { PlaceholderImage } from './placeholder-image'
 
 interface BlurImageProps extends React.ImgHTMLAttributes<HTMLImageElement> {
     src: string
@@ -13,6 +14,11 @@ interface BlurImageProps extends React.ImgHTMLAttributes<HTMLImageElement> {
 
 export function BlurImage({ src, alt, className, width = 200, height = 200, ...props }: BlurImageProps) {
     const [isLoading, setLoading] = useState(true)
+    const [hasError, setHasError] = useState(false)
+
+    if (hasError) {
+        return <PlaceholderImage width={width} height={height} className={className} />
+    }
 
     return (
         <img
@@ -26,11 +32,7 @@ export function BlurImage({ src, alt, className, width = 200, height = 200, ...p
                 isLoading ? 'scale-105 blur-lg' : 'scale-100 blur-0'
             )}
             onLoad={() => setLoading(false)}
-            onError={(e) => {
-                const target = e.target as HTMLImageElement
-                target.onerror = null
-                target.src = '/placeholder-image.jpg'
-            }}
+            onError={() => setHasError(true)}
             {...props}
         />
     )

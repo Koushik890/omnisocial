@@ -16,5 +16,20 @@ declare module '@mistralai/mistralai' {
         }>
       }>
     }
+    agents: {
+      complete: (params: {
+        agentId: string
+        messages: Array<{
+          role: string
+          content: string
+        }>
+      }) => Promise<{
+        choices: Array<{
+          message: {
+            content: string
+          }
+        }>
+      }>
+    }
   }
 } 

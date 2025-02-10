@@ -13,6 +13,7 @@ import {
   findAutomation,
   getAutomations,
   updateAutomation,
+  deleteTrigger,
 } from './queries'
 
 export const createAutomations = async (id?: string) => {
@@ -22,7 +23,13 @@ export const createAutomations = async (id?: string) => {
   }
 
   try {
-    const automation = await createAutomation(user.data.id, id)
+    // First find the user in our database
+    const dbUser = await findUser(user.data.id)
+    if (!dbUser) {
+      return { status: 404, data: 'User not found in database' }
+    }
+
+    const automation = await createAutomation(dbUser.clerkId, id)
     if (automation) {
       return { 
         status: 200, 
@@ -33,7 +40,8 @@ export const createAutomations = async (id?: string) => {
 
     return { status: 404, data: 'Oops! something went wrong' }
   } catch (error) {
-    return { status: 500, data: 'Internal server error' }
+    console.error('Error in createAutomations:', error);
+    return { status: 500, data: error instanceof Error ? error.message : 'Internal server error' }
   }
 }
 
@@ -128,19 +136,35 @@ export const saveListener = async (
   }
 }
 
-export const saveTrigger = async (automationId: string, trigger: string[]) => {
+export const saveTrigger = async (automationId: string, trigger: string[], config?: any) => {
   const user = await onCurrentUser()
   if (user.status !== 200 || !user.data) {
     return { status: 401, data: 'Unauthorized' }
   }
 
   try {
-    const create = await addTrigger(automationId, trigger)
+    const create = await addTrigger(automationId, trigger, config)
     if (create) return { status: 200, data: 'Trigger saved' }
-    console.error('Failed to save trigger:', { automationId, trigger })
+    console.error('Failed to save trigger:', { automationId, trigger, config })
     return { status: 404, data: 'Cannot save trigger' }
   } catch (error) {
-    console.error('Error saving trigger:', error instanceof Error ? error.message : 'Unknown error', { automationId, trigger })
+    console.error('Error saving trigger:', error instanceof Error ? error.message : 'Unknown error', { automationId, trigger, config })
+    return { status: 500, data: 'Oops! something went wrong' }
+  }
+}
+
+export const removeTrigger = async (automationId: string) => {
+  const user = await onCurrentUser()
+  if (user.status !== 200 || !user.data) {
+    return { status: 401, data: 'Unauthorized' }
+  }
+
+  try {
+    const result = await deleteTrigger(automationId)
+    if (result) return { status: 200, data: 'Trigger removed' }
+    return { status: 404, data: 'Cannot remove trigger' }
+  } catch (error) {
+    console.error('Error removing trigger:', error)
     return { status: 500, data: 'Oops! something went wrong' }
   }
 }
@@ -190,10 +214,20 @@ export const getProfilePosts = async () => {
   try {
     const profile = await findUser(user.data.id)
     const posts = await fetch(
-      `${process.env.INSTAGRAM_BASE_URL}/me/media?fields=id,caption,media_url,media_type,timestamp&limit=10&access_token=${profile?.integrations[0].token}`
+      `${process.env.INSTAGRAM_BASE_URL}/me/media?fields=id,caption,media_url,thumbnail_url,media_type,timestamp&limit=10&access_token=${profile?.integrations[0].token}`
     )
     const parsed = await posts.json()
-    if (parsed) return { status: 200, data: parsed }
+    if (parsed) {
+      // Transform the response to use thumbnail_url for videos
+      const transformedData = {
+        ...parsed,
+        data: parsed.data.map((post: any) => ({
+          ...post,
+          media_url: post.media_type === 'VIDEO' && post.thumbnail_url ? post.thumbnail_url : post.media_url
+        }))
+      }
+      return { status: 200, data: transformedData }
+    }
     console.log('🔴 Error in getting posts')
     return { status: 404 }
   } catch (error) {

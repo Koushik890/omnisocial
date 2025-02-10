@@ -2,7 +2,7 @@
 import { ChevronRight, Menu, PencilIcon } from 'lucide-react'
 import React from 'react'
 import { useQueryAutomation } from '@/hooks/user-queries'
-import { useEditAutomation } from '@/hooks/use-automations'
+import { useEditAutomation, useAutomationSync } from '@/hooks/use-automations'
 import { useMutationDataState } from '@/hooks/use-mutation-data'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
@@ -37,6 +37,7 @@ const AutomationsBreadCrumb = ({ id }: Props) => {
   const params = useParams()
   const slug = params?.slug as string
   const [sidebarWidth, setSidebarWidth] = React.useState<number>(250)
+  const { isSaving, lastSaved } = useAutomationSync(id)
 
   React.useEffect(() => {
     if (edit && inputRef.current) {
@@ -63,6 +64,27 @@ const AutomationsBreadCrumb = ({ id }: Props) => {
       window.removeEventListener('sidebarStateChange', handleSidebarChange as EventListener)
     }
   }, [])
+
+  // Function to format the last saved time
+  const getLastSavedText = () => {
+    if (isSaving) return 'Saving...'
+    if (!lastSaved) return ''
+    
+    const now = new Date()
+    const diff = now.getTime() - lastSaved.getTime()
+    const seconds = Math.floor(diff / 1000)
+    
+    if (seconds < 5) return 'Changes saved'
+    if (seconds < 60) return `Saved ${seconds} seconds ago`
+    
+    const minutes = Math.floor(seconds / 60)
+    if (minutes < 60) return `Saved ${minutes} minute${minutes === 1 ? '' : 's'} ago`
+    
+    const hours = Math.floor(minutes / 60)
+    if (hours < 24) return `Saved ${hours} hour${hours === 1 ? '' : 's'} ago`
+    
+    return `Saved ${Math.floor(hours / 24)} days ago`
+  }
 
   return (
     <div 
@@ -158,8 +180,12 @@ const AutomationsBreadCrumb = ({ id }: Props) => {
 
         {/* Right: Status & Actions */}
         <div className="flex items-center gap-4">
-          <p className="text-[14px] font-medium leading-[20px] font-['Plus_Jakarta_Sans'] text-gray-900">
-            Changes Saved
+          <p className={cn(
+            "text-[14px] font-medium leading-[20px] font-['Plus_Jakarta_Sans'] transition-opacity duration-200",
+            isSaving ? "text-gray-500" : "text-gray-900",
+            !lastSaved && "opacity-0"
+          )}>
+            {getLastSavedText()}
           </p>
           <Button 
             variant="default" 

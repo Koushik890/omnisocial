@@ -4,12 +4,16 @@ import React from 'react'
 import { useParams } from 'next/navigation'
 import AutomationsBreadCrumb from '@/components/global/bread-crumbs/automations'
 import FlowBuilder from '@/components/global/automations/flow-builder'
+import { useAutomationSync } from '@/hooks/use-automations'
 
 interface AutomationClientProps {
   id: string
 }
 
-export const AutomationClient: React.FC<AutomationClientProps> = ({ id }) => {
+const AutomationClient = ({ id }: AutomationClientProps) => {
+  // Initialize the automation sync hook
+  useAutomationSync(id)
+
   const [sidebarWidth, setSidebarWidth] = React.useState<number>(250)
 
   React.useEffect(() => {
@@ -46,4 +50,6 @@ export const AutomationClient: React.FC<AutomationClientProps> = ({ id }) => {
       </div>
     </div>
   )
-} 
+}
+
+export default AutomationClient 

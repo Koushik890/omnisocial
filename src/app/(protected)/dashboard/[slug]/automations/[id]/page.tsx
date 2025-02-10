@@ -6,7 +6,7 @@ import {
     HydrationBoundary,
     QueryClient,
 } from '@tanstack/react-query'
-import { AutomationClient } from "./client";
+import AutomationClient from "./client";
 
 interface PageProps {
     params: Promise<{

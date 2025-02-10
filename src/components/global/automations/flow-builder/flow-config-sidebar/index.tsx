@@ -1,3 +1,5 @@
+'use client'
+
 import React from 'react'
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet'
 import { X, Zap, LucideIcon } from 'lucide-react'
@@ -15,6 +17,7 @@ interface FlowConfigSidebarProps {
   selectedActions: Array<{ id: string; name: string; icon: React.ComponentType<any> }>
   onActionRemove: (actionId: string) => void
   showChooseNextStep?: boolean
+  onTriggerConfigurationOpen?: (trigger: { id: string; name: string; icon: React.ComponentType<any> }) => void
 }
 
 const MotionSheetContent = motion.create(SheetContent)
@@ -29,11 +32,18 @@ export const FlowConfigSidebar: React.FC<FlowConfigSidebarProps> = ({
   selectedActions,
   onActionRemove,
   showChooseNextStep,
+  onTriggerConfigurationOpen,
 }) => {
   // Handle close with cleanup
   const handleClose = React.useCallback(() => {
     onClose()
   }, [onClose])
+
+  const handleTriggerClick = (trigger: { id: string; name: string; icon: React.ComponentType<any> }) => {
+    if (onTriggerConfigurationOpen) {
+      onTriggerConfigurationOpen(trigger)
+    }
+  }
 
   return (
     <Sheet open={isOpen} onOpenChange={handleClose}>
@@ -79,6 +89,7 @@ export const FlowConfigSidebar: React.FC<FlowConfigSidebarProps> = ({
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: 0.1 + index * 0.05 }}
+                  onClick={() => handleTriggerClick(trigger)}
                 >
                   <div className={styles.selectedTriggerContent}>
                     <div className={styles.triggerIconWrapper}>
@@ -90,7 +101,10 @@ export const FlowConfigSidebar: React.FC<FlowConfigSidebarProps> = ({
                   </div>
                   <button 
                     className={styles.removeTriggerButton}
-                    onClick={() => onTriggerRemove(trigger.id)}
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      onTriggerRemove(trigger.id)
+                    }}
                     aria-label={`Remove ${trigger.name} trigger`}
                   >
                     <X className={styles.removeTriggerIcon} />
@@ -98,15 +112,17 @@ export const FlowConfigSidebar: React.FC<FlowConfigSidebarProps> = ({
                 </motion.div>
               ))}
             </div>
-            <Button
-              variant="ghost"
-              className={styles.triggerButton}
-              onClick={onNewTrigger}
-            >
-              <div className={styles.triggerButtonContent}>
-                + New Trigger
-              </div>
-            </Button>
+            {selectedTriggers.length === 0 && (
+              <Button
+                variant="ghost"
+                className={styles.triggerButton}
+                onClick={onNewTrigger}
+              >
+                <div className={styles.triggerButtonContent}>
+                  + New Trigger
+                </div>
+              </Button>
+            )}
           </div>
 
           {/* Then Section */}

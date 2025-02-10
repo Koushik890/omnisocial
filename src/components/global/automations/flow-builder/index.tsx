@@ -23,16 +23,42 @@ import { useQueryAutomation } from '@/hooks/user-queries'
 import { TriggerNode } from './nodes/trigger-node'
 import { ActionNode } from './nodes/action-node'
 import { PlaceholderNode } from './nodes/placeholder-node'
-import { AutomationData } from '@/types/automation'
+import { AutomationData, TriggerConfig, TriggerConfigurationStatus } from '@/types/automation'
 import { Button } from '@/components/ui/button'
-import { Plus, Undo2, Redo2, MessageSquare, Bot } from 'lucide-react'
+import { Plus, Undo2, Redo2, MessageSquare, Bot, Instagram } from 'lucide-react'
 import { toast } from 'sonner'
-import { FlowConfigSidebar } from './flow-config-sidebar'
+import { FlowConfigSidebar } from './flow-config-sidebar/index'
 import { ActionModal } from './action-modal'
 import { TriggerSidebar } from './trigger-sidebar'
+import { TriggerConfigurationSidebar } from './trigger-configuration-sidebar'
+import { useAutomationWorkflow, useAutomationSync } from '@/hooks/use-automations'
 
 interface FlowBuilderProps {
   id: string
+}
+
+interface TriggerDetails {
+  name: string
+  icon: React.ComponentType<any>
+}
+
+const TRIGGER_DETAILS: Record<string, TriggerDetails> = {
+  'post-comments': {
+    name: 'Post Comments',
+    icon: MessageSquare
+  },
+  'post-likes': {
+    name: 'Post Likes',
+    icon: Instagram
+  },
+  'direct-messages': {
+    name: 'Direct Messages',
+    icon: MessageSquare
+  }
+}
+
+const getTriggerDetails = (type: string): TriggerDetails | undefined => {
+  return TRIGGER_DETAILS[type]
 }
 
 const nodeTypes: NodeTypes = {
@@ -44,6 +70,20 @@ const nodeTypes: NodeTypes = {
 // Pro options to remove watermark
 const proOptions = { hideAttribution: true }
 
+const getConfigurationStatus = (config?: TriggerConfig): TriggerConfigurationStatus => {
+  if (!config) return 'unconfigured'
+  if (config.status) return config.status
+
+  // Determine status based on config content
+  const hasPost = config.type === 'specific' && !!config.postId
+  const hasKeywords = (config.keywords?.include ?? []).length > 0
+  const hasReplyMessages = (config.replyMessages ?? []).length > 0
+
+  if (hasPost && hasKeywords && hasReplyMessages) return 'complete'
+  if (hasPost || hasKeywords || hasReplyMessages) return 'partial'
+  return 'unconfigured'
+}
+
 const FlowBuilder: React.FC<FlowBuilderProps> = ({ id }) => {
   const { data } = useQueryAutomation(id)
   const [nodes, setNodes, onNodesChange] = useNodesState([])
@@ -52,27 +92,85 @@ const FlowBuilder: React.FC<FlowBuilderProps> = ({ id }) => {
   const [isActionModalOpen, setIsActionModalOpen] = React.useState(false)
   const [isTriggerConfigOpen, setIsTriggerConfigOpen] = React.useState(false)
   const [isTriggerSidebarOpen, setIsTriggerSidebarOpen] = React.useState(false)
+  const [isTriggerConfigurationOpen, setIsTriggerConfigurationOpen] = React.useState(false)
+  const [selectedTriggerForConfig, setSelectedTriggerForConfig] = React.useState<{
+    id: string
+    name: string
+    icon: React.ComponentType<any>
+  } | null>(null)
   const [selectedActions, setSelectedActions] = React.useState<Array<{ id: string; name: string; icon: React.ComponentType<any> }>>([])
   const [selectedTriggers, setSelectedTriggers] = React.useState<Array<{ id: string; name: string; icon: React.ComponentType<any> }>>([])
   const actionNodeStateRef = React.useRef<{id: string; data: any} | null>(null)
   const isInitializedRef = React.useRef(false)
+  const { saveChanges } = useAutomationSync(id)
+  const [triggerConfig, setTriggerConfig] = React.useState<Record<string, TriggerConfig>>({})
 
   // Handle trigger selection
   const handleTriggerSelect = React.useCallback((triggerId: string, triggerName: string, icon: React.ComponentType<any>) => {
-    setSelectedTriggers(prev => {
-      if (!prev.some(trigger => trigger.id === triggerId)) {
-        return [...prev, { id: triggerId, name: triggerName, icon }]
-      }
-      return prev
+    const newTrigger = { id: triggerId, name: triggerName, icon }
+    setSelectedTriggers([newTrigger])
+    
+    // Save the trigger selection with initial configuration state
+    saveChanges({
+      trigger: [{
+        type: triggerId,
+        config: {
+          status: 'unconfigured'
+        } as TriggerConfig
+      }]
     })
+
     setIsTriggerSidebarOpen(false)
-    setIsTriggerConfigOpen(true)
+    setSelectedTriggerForConfig(newTrigger)
+    setIsTriggerConfigurationOpen(true)
+  }, [saveChanges])
+
+  // Handle trigger configuration
+  const handleTriggerConfigurationOpen = React.useCallback((trigger: { id: string; name: string; icon: React.ComponentType<any> }) => {
+    setSelectedTriggerForConfig(trigger)
+    setIsTriggerConfigurationOpen(true)
   }, [])
 
   // Handle trigger removal
-  const handleTriggerRemove = React.useCallback((triggerId: string) => {
-    setSelectedTriggers(prev => prev.filter(trigger => trigger.id !== triggerId))
-  }, [])
+  const handleTriggerRemove = React.useCallback(async (triggerId: string) => {
+    try {
+      // Remove from UI state first
+      setSelectedTriggers(prev => prev.filter(trigger => trigger.id !== triggerId))
+
+      // Save changes to remove the trigger from the database
+      await saveChanges({
+        trigger: [] // Empty array to trigger deletion
+      })
+
+      // Update nodes to reflect the removal
+      setNodes(nds => nds.map(node => {
+        if (node.type === 'trigger') {
+          return {
+            ...node,
+            data: {
+              ...node.data,
+              selectedTriggers: [],
+              config: undefined,
+              configurationStatus: 'unconfigured'
+            }
+          }
+        }
+        return node
+      }))
+
+      // Clear trigger configuration
+      setTriggerConfig({})
+
+      // Close configuration sidebar if open
+      setIsTriggerConfigurationOpen(false)
+      setSelectedTriggerForConfig(null)
+
+      toast.success('Trigger removed successfully')
+    } catch (error) {
+      console.error('Error removing trigger:', error)
+      toast.error('Failed to remove trigger')
+    }
+  }, [saveChanges, setNodes])
 
   // Handle new trigger button click
   const handleNewTrigger = React.useCallback(() => {
@@ -175,6 +273,22 @@ const FlowBuilder: React.FC<FlowBuilderProps> = ({ id }) => {
       const initialNodes: Node[] = []
       const initialEdges: Edge[] = []
 
+      // Initialize selected triggers from saved data without auto-opening configuration
+      if (automationData.trigger && automationData.trigger.length > 0) {
+        const savedTrigger = automationData.trigger[0]
+        const triggerDetails = getTriggerDetails(savedTrigger.type)
+        if (triggerDetails) {
+          setSelectedTriggers([{
+            id: savedTrigger.type,
+            name: triggerDetails.name,
+            icon: triggerDetails.icon
+          }])
+          // Remove automatic configuration opening
+          setSelectedTriggerForConfig(null)
+          setIsTriggerConfigurationOpen(false)
+        }
+      }
+
       // Add trigger node
       const triggerNode: Node = {
         id: 'trigger-1',
@@ -194,7 +308,12 @@ const FlowBuilder: React.FC<FlowBuilderProps> = ({ id }) => {
           onConfigSidebarOpen: () => setIsTriggerConfigOpen(true),
           isTriggerSidebarOpen,
           onTriggerSidebarOpen: () => setIsTriggerSidebarOpen(true),
-          onTriggerSidebarClose: () => setIsTriggerSidebarOpen(false)
+          onTriggerSidebarClose: () => setIsTriggerSidebarOpen(false),
+          onTriggerConfigurationOpen: handleTriggerConfigurationOpen,
+          config: automationData.trigger.length > 0 ? automationData.trigger[0].config : undefined,
+          configurationStatus: automationData.trigger.length > 0 
+            ? getConfigurationStatus(automationData.trigger[0].config as TriggerConfig)
+            : 'unconfigured'
         }
       }
       initialNodes.push(triggerNode)
@@ -424,14 +543,115 @@ const FlowBuilder: React.FC<FlowBuilderProps> = ({ id }) => {
               onTriggerRemove: handleTriggerRemove,
               isTriggerSidebarOpen,
               onTriggerSidebarOpen: () => setIsTriggerSidebarOpen(true),
-              onTriggerSidebarClose: () => setIsTriggerSidebarOpen(false)
+              onTriggerSidebarClose: () => setIsTriggerSidebarOpen(false),
+              onTriggerConfigurationOpen: handleTriggerConfigurationOpen
             }
           }
         }
         return node
       })
     )
-  }, [selectedTriggers, isTriggerSidebarOpen, handleTriggerSelect, handleTriggerRemove, setNodes])
+  }, [selectedTriggers, isTriggerSidebarOpen, handleTriggerSelect, handleTriggerRemove, handleTriggerConfigurationOpen])
+
+  const handleTriggerConfig = React.useCallback((type: string, config: TriggerConfig | null) => {
+    // Get existing config from nodes
+    const existingNode = nodes.find(node => node.type === 'trigger')
+    const existingConfig = existingNode?.data?.config || {}
+    
+    if (!config) {
+      // When removing post, preserve keywords and replyMessages but clear post-specific fields
+      const updatedConfig = {
+        ...existingConfig,
+        type: undefined,
+        postId: undefined,
+        mediaType: undefined,
+        mediaUrl: undefined,
+        caption: undefined,
+        // Preserve existing keywords and replyMessages
+        keywords: existingConfig.keywords,
+        replyMessages: existingConfig.replyMessages
+      }
+
+      // Calculate status based on remaining configurations
+      const hasKeywords = updatedConfig.keywords?.include?.length > 0
+      const hasReplyMessages = updatedConfig.replyMessages?.length > 0
+      
+      updatedConfig.status = (hasKeywords || hasReplyMessages) ? 'partial' : 'unconfigured'
+
+      setTriggerConfig(prev => ({
+        ...prev,
+        [type]: updatedConfig
+      }))
+
+      // Update nodes with updated configuration
+      setNodes(nds => nds.map(node => {
+        if (node.type === 'trigger') {
+          return {
+            ...node,
+            data: {
+              ...node.data,
+              config: updatedConfig,
+              configurationStatus: updatedConfig.status
+            }
+          }
+        }
+        return node
+      }))
+
+      // Save the updated configuration
+      saveChanges({
+        trigger: [{
+          type,
+          config: updatedConfig
+        }]
+      })
+      
+      return
+    }
+
+    // Rest of the existing code for handling non-null config...
+    const mergedConfig = {
+      ...existingConfig,
+      ...config,
+      // Ensure we preserve existing arrays/objects if they exist and handle null/undefined
+      keywords: config.keywords || existingConfig.keywords || undefined,
+      replyMessages: config.replyMessages || existingConfig.replyMessages || undefined,
+      status: getConfigurationStatus({
+        ...existingConfig,
+        ...config,
+        keywords: config.keywords || existingConfig.keywords || undefined,
+        replyMessages: config.replyMessages || existingConfig.replyMessages || undefined,
+      })
+    }
+
+    setTriggerConfig(prev => ({
+      ...prev,
+      [type]: mergedConfig
+    }))
+
+    // Update nodes with merged configuration
+    setNodes(nds => nds.map(node => {
+      if (node.type === 'trigger') {
+        return {
+          ...node,
+          data: {
+            ...node.data,
+            config: mergedConfig,
+            configurationStatus: mergedConfig.status
+          }
+        }
+      }
+      return node
+    }))
+
+    // Save the merged configuration
+    saveChanges({
+      trigger: [{
+        type,
+        config: mergedConfig
+      }]
+    })
+  }, [nodes, saveChanges, setNodes])
 
   return (
     <div className="absolute inset-0">
@@ -507,7 +727,8 @@ const FlowBuilder: React.FC<FlowBuilderProps> = ({ id }) => {
                   onConfigSidebarOpen: () => setIsTriggerConfigOpen(true),
                   isTriggerSidebarOpen,
                   onTriggerSidebarOpen: () => setIsTriggerSidebarOpen(true),
-                  onTriggerSidebarClose: () => setIsTriggerSidebarOpen(false)
+                  onTriggerSidebarClose: () => setIsTriggerSidebarOpen(false),
+                  onTriggerConfigurationOpen: handleTriggerConfigurationOpen
                 }
               }
               setNodes((nds) => [...nds, newNode])
@@ -538,6 +759,20 @@ const FlowBuilder: React.FC<FlowBuilderProps> = ({ id }) => {
         </Panel>
       </ReactFlow>
 
+      {/* Flow Config Sidebar */}
+      <FlowConfigSidebar
+        isOpen={isTriggerConfigOpen}
+        onClose={handleTriggerConfigClose}
+        onChooseNextStep={handleChooseNextStep}
+        onNewTrigger={handleNewTrigger}
+        selectedTriggers={selectedTriggers}
+        onTriggerRemove={handleTriggerRemove}
+        selectedActions={selectedActions}
+        onActionRemove={handleActionRemove}
+        showChooseNextStep={selectedActions.length === 0}
+        onTriggerConfigurationOpen={handleTriggerConfigurationOpen}
+      />
+
       {/* Action Modal */}
       <ActionModal
         isOpen={isActionModalOpen}
@@ -553,17 +788,13 @@ const FlowBuilder: React.FC<FlowBuilderProps> = ({ id }) => {
         selectedTriggers={selectedTriggers}
       />
 
-      {/* Trigger Config Sidebar */}
-      <FlowConfigSidebar
-        isOpen={isTriggerConfigOpen}
-        onClose={handleTriggerConfigClose}
-        onChooseNextStep={handleChooseNextStep}
-        onNewTrigger={handleNewTrigger}
-        selectedTriggers={selectedTriggers}
-        onTriggerRemove={handleTriggerRemove}
-        selectedActions={selectedActions}
-        onActionRemove={handleActionRemove}
-        showChooseNextStep={selectedActions.length === 0}
+      {/* Trigger Configuration Sidebar */}
+      <TriggerConfigurationSidebar
+        isOpen={isTriggerConfigurationOpen}
+        onClose={() => setIsTriggerConfigurationOpen(false)}
+        selectedTrigger={selectedTriggerForConfig}
+        automationId={id}
+        onTriggerConfig={handleTriggerConfig}
       />
     </div>
   )

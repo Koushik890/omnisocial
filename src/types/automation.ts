@@ -18,7 +18,12 @@ export interface AutomationKeyword {
 
 export interface AutomationData {
   id: string;
-  trigger: { type: string }[];
+  trigger: {
+    id: string;
+    type: string;
+    config?: any;
+    automationId: string | null;
+  }[];
   keywords: AutomationKeyword[];
   listener: any;
 }
@@ -33,3 +38,18 @@ export interface AutomationAction {
   upgradeRequired?: boolean;
   savedText?: string;
 }
+
+export interface TriggerConfig {
+  status: TriggerConfigurationStatus
+  type?: 'specific' | 'all' | 'next'
+  postId?: string
+  mediaType?: string
+  mediaUrl?: string
+  caption?: string
+  keywords?: {
+    include: string[]
+  }
+  replyMessages?: string[]
+}
+
+export type TriggerConfigurationStatus = 'unconfigured' | 'partial' | 'complete'

@@ -5,10 +5,23 @@ import React from 'react'
 
 type Props = { children: React.ReactNode }
 
-const client = new QueryClient()
+export default function ReactQueryProvider({ children }: Props) {
+  const [queryClient] = React.useState(() => new QueryClient({
+    defaultOptions: {
+      queries: {
+        // Disable automatic background refetching
+        refetchOnWindowFocus: false,
+        // Don't retry on failure
+        retry: false,
+        // Keep data for 5 minutes
+        staleTime: 5 * 60 * 1000,
+      },
+    },
+  }))
 
-const ReactQueryProvider = ({ children }: Props) => {
-  return <QueryClientProvider client={client}>{children}</QueryClientProvider>
+  return (
+    <QueryClientProvider client={queryClient}>
+      {children}
+    </QueryClientProvider>
+  )
 }
-
-export default ReactQueryProvider
