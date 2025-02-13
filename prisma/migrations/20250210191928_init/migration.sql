@@ -13,6 +13,9 @@ CREATE TYPE "LISTENERS" AS ENUM ('OMNIAI', 'MESSAGE');
 -- CreateEnum
 CREATE TYPE "SUBSCRIPTION_STATUS" AS ENUM ('ACTIVE', 'PAST_DUE', 'CANCEL_AT_PERIOD_END', 'DELETED');
 
+-- CreateEnum
+CREATE TYPE "AutomationStatus" AS ENUM ('DRAFT', 'PUBLISHED', 'ARCHIVED');
+
 -- CreateTable
 CREATE TABLE "User" (
     "id" UUID NOT NULL DEFAULT gen_random_uuid(),
@@ -57,8 +60,10 @@ CREATE TABLE "Automation" (
     "id" UUID NOT NULL DEFAULT gen_random_uuid(),
     "name" TEXT NOT NULL DEFAULT 'Untitled',
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP(3) NOT NULL,
     "active" BOOLEAN NOT NULL DEFAULT false,
     "userId" UUID,
+    "status" "AutomationStatus" NOT NULL DEFAULT 'DRAFT',
 
     CONSTRAINT "Automation_pkey" PRIMARY KEY ("id")
 );
@@ -73,18 +78,6 @@ CREATE TABLE "Dms" (
     "message" TEXT,
 
     CONSTRAINT "Dms_pkey" PRIMARY KEY ("id")
-);
-
--- CreateTable
-CREATE TABLE "Post" (
-    "id" UUID NOT NULL DEFAULT gen_random_uuid(),
-    "postid" TEXT NOT NULL,
-    "caption" TEXT,
-    "media" TEXT NOT NULL,
-    "mediaType" "MEDIATYPE" NOT NULL DEFAULT 'IMAGE',
-    "automationId" UUID,
-
-    CONSTRAINT "Post_pkey" PRIMARY KEY ("id")
 );
 
 -- CreateTable
@@ -105,17 +98,39 @@ CREATE TABLE "Trigger" (
     "id" UUID NOT NULL DEFAULT gen_random_uuid(),
     "type" TEXT NOT NULL,
     "automationId" UUID,
+    "status" TEXT DEFAULT 'unconfigured',
 
     CONSTRAINT "Trigger_pkey" PRIMARY KEY ("id")
 );
 
 -- CreateTable
-CREATE TABLE "Keyword" (
+CREATE TABLE "TriggerPost" (
+    "id" UUID NOT NULL DEFAULT gen_random_uuid(),
+    "postId" TEXT NOT NULL,
+    "mediaType" "MEDIATYPE" NOT NULL DEFAULT 'IMAGE',
+    "mediaUrl" TEXT NOT NULL,
+    "caption" TEXT,
+    "triggerId" UUID NOT NULL,
+
+    CONSTRAINT "TriggerPost_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "TriggerKeyword" (
     "id" UUID NOT NULL DEFAULT gen_random_uuid(),
     "word" TEXT NOT NULL,
-    "automationId" UUID,
+    "triggerId" UUID NOT NULL,
 
-    CONSTRAINT "Keyword_pkey" PRIMARY KEY ("id")
+    CONSTRAINT "TriggerKeyword_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "TriggerReplyMessage" (
+    "id" UUID NOT NULL DEFAULT gen_random_uuid(),
+    "message" TEXT NOT NULL,
+    "triggerId" UUID NOT NULL,
+
+    CONSTRAINT "TriggerReplyMessage_pkey" PRIMARY KEY ("id")
 );
 
 -- CreateIndex
@@ -123,12 +138,6 @@ CREATE UNIQUE INDEX "User_clerkId_key" ON "User"("clerkId");
 
 -- CreateIndex
 CREATE UNIQUE INDEX "User_email_key" ON "User"("email");
-
--- CreateIndex
-CREATE UNIQUE INDEX "User_firstname_key" ON "User"("firstname");
-
--- CreateIndex
-CREATE UNIQUE INDEX "User_lastname_key" ON "User"("lastname");
 
 -- CreateIndex
 CREATE UNIQUE INDEX "Subscription_userId_key" ON "Subscription"("userId");
@@ -146,7 +155,7 @@ CREATE UNIQUE INDEX "Integrations_instagramId_key" ON "Integrations"("instagramI
 CREATE UNIQUE INDEX "Listener_automationId_key" ON "Listener"("automationId");
 
 -- CreateIndex
-CREATE UNIQUE INDEX "Keyword_automationId_word_key" ON "Keyword"("automationId", "word");
+CREATE UNIQUE INDEX "TriggerKeyword_triggerId_word_key" ON "TriggerKeyword"("triggerId", "word");
 
 -- AddForeignKey
 ALTER TABLE "Subscription" ADD CONSTRAINT "Subscription_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE;
@@ -161,13 +170,16 @@ ALTER TABLE "Automation" ADD CONSTRAINT "Automation_userId_fkey" FOREIGN KEY ("u
 ALTER TABLE "Dms" ADD CONSTRAINT "Dms_automationId_fkey" FOREIGN KEY ("automationId") REFERENCES "Automation"("id") ON DELETE SET NULL ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "Post" ADD CONSTRAINT "Post_automationId_fkey" FOREIGN KEY ("automationId") REFERENCES "Automation"("id") ON DELETE CASCADE ON UPDATE CASCADE;
-
--- AddForeignKey
 ALTER TABLE "Listener" ADD CONSTRAINT "Listener_automationId_fkey" FOREIGN KEY ("automationId") REFERENCES "Automation"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "Trigger" ADD CONSTRAINT "Trigger_automationId_fkey" FOREIGN KEY ("automationId") REFERENCES "Automation"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "Keyword" ADD CONSTRAINT "Keyword_automationId_fkey" FOREIGN KEY ("automationId") REFERENCES "Automation"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+ALTER TABLE "TriggerPost" ADD CONSTRAINT "TriggerPost_triggerId_fkey" FOREIGN KEY ("triggerId") REFERENCES "Trigger"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "TriggerKeyword" ADD CONSTRAINT "TriggerKeyword_triggerId_fkey" FOREIGN KEY ("triggerId") REFERENCES "Trigger"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "TriggerReplyMessage" ADD CONSTRAINT "TriggerReplyMessage_triggerId_fkey" FOREIGN KEY ("triggerId") REFERENCES "Trigger"("id") ON DELETE CASCADE ON UPDATE CASCADE;

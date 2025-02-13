@@ -95,7 +95,7 @@ function getStatusVariant(status: string): 'success' | 'warning' {
   }
 }
 
-function transformAutomation(data: AutomationData): Automation {
+function transformAutomation(data: any): Automation {
   const status: 'Live' | 'Draft' = data.active ? 'Live' : 'Draft'
   const runs = data.listener ? data.listener.dmCount + data.listener.commentCount : 0
 

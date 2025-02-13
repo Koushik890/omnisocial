@@ -58,11 +58,9 @@ model Automation {
   active    Boolean   @default(false)
   trigger   Trigger[]
   listener  Listener?
-  posts     Post[]
   dms       Dms[]
   User      User?     @relation(fields: [userId], references: [id], onDelete: Cascade)
   userId    String?   @db.Uuid
-  keywords  Keyword[]
   config    Json?
   status    AutomationStatus @default(DRAFT)
 }
@@ -78,13 +76,15 @@ model Dms {
 }
 
 model Post {
-  id           String      @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  postid       String
+  id           String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  postId       String
+  mediaType    MEDIATYPE @default(IMAGE)
+  mediaUrl     String
   caption      String?
-  media        String
-  mediaType    MEDIATYPE   @default(IMAGE)
-  Automation   Automation? @relation(fields: [automationId], references: [id], onDelete: Cascade)
-  automationId String?     @db.Uuid
+  trigger      Trigger  @relation(fields: [triggerId], references: [id], onDelete: Cascade)
+  triggerId    String   @db.Uuid
+
+  @@index([triggerId])
 }
 
 model Listener {
@@ -101,18 +101,33 @@ model Listener {
 model Trigger {
   id           String      @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   type         String
-  config       Json?       @db.JsonB
+  status       String      @default("unconfigured") // can be "unconfigured", "partial", or "complete"
   Automation   Automation? @relation(fields: [automationId], references: [id], onDelete: Cascade)
   automationId String?     @db.Uuid
+  posts        Post[]
+  keywords     Keyword[]
+  replyMessages ReplyMessage[]
+
+  @@index([automationId])
 }
 
 model Keyword {
-  id           String      @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  id           String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   word         String
-  Automation   Automation? @relation(fields: [automationId], references: [id], onDelete: Cascade)
-  automationId String?     @db.Uuid
+  trigger      Trigger  @relation(fields: [triggerId], references: [id], onDelete: Cascade)
+  triggerId    String   @db.Uuid
 
-  @@unique([automationId, word]) //this constraints ensure user cant use the same keyword on multiple automations
+  @@unique([triggerId, word])
+  @@index([triggerId])
+}
+
+model ReplyMessage {
+  id           String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  message      String
+  trigger      Trigger  @relation(fields: [triggerId], references: [id], onDelete: Cascade)
+  triggerId    String   @db.Uuid
+
+  @@index([triggerId])
 }
 
 enum SUBSCRIPTION_PLAN {

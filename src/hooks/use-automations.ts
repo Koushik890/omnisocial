@@ -287,43 +287,208 @@ export const useTriggers = (id: string) => {
   const dispatch: AppDispatch = useDispatch()
   const { data: automationData } = useQueryAutomation(id)
   const { saveChanges } = useAutomationSync(id)
+  const [isInitialized, setIsInitialized] = useState(false)
 
   // Initialize Redux state from database data
   useEffect(() => {
-    if (automationData?.data?.trigger) {
-      const dbTriggers = automationData.data.trigger.map((t: { type: string }) => t.type as 'COMMENT' | 'DM')
-      if (dbTriggers.length > 0 && (!types || types.length === 0)) {
-        dbTriggers.forEach((type: 'COMMENT' | 'DM') => {
-          dispatch(TRIGGER({ trigger: { type } }))
-        })
+    if (!automationData?.data || isInitialized) return
+
+    console.log('Raw automation data:', automationData.data)
+    
+    if (automationData.data.trigger && automationData.data.trigger.length > 0) {
+      const trigger = automationData.data.trigger[0]
+      console.log('Raw trigger data:', trigger)
+
+      // Map API type to UI type with explicit type checking
+      let uiType: 'COMMENT' | 'DM'
+      let apiType = trigger.type
+
+      // Strict type mapping with validation
+      if (apiType === 'user-message' || apiType === 'DM') {
+        uiType = 'DM'
+        apiType = 'user-message' // Normalize to API type
+      } else if (apiType === 'post-comments' || apiType === 'COMMENT') {
+        uiType = 'COMMENT'
+        apiType = 'post-comments' // Normalize to API type
+      } else {
+        console.error('Unknown trigger type:', apiType)
+        return
       }
-    }
-  }, [automationData, dispatch, types])
 
-  const onSetTrigger = useCallback((type: 'COMMENT' | 'DM') => {
-    dispatch(TRIGGER({ trigger: { type } }))
-    // Auto-save when trigger changes
-    saveChanges({
-      trigger: [{ type }]
-    })
-  }, [dispatch, saveChanges])
+      console.log('Mapped trigger types:', { apiType, uiType })
 
-  const { isPending, mutate } = useMutationData(
-    ['add-trigger'],
-    (data: { types: string[] }) => saveTrigger(id, data.types),
-    'automation-info',
-    () => {
-      queryClient.invalidateQueries({ queryKey: ['automation-info', id] })
-    }
-  )
+      // Create configuration object
+      const config = {
+        status: trigger.status || 'unconfigured',
+        type: (trigger as any).config?.type || 'all',
+        keywords: {
+          include: trigger.keywords?.map(k => k.word) || []
+        },
+        replyMessages: trigger.replyMessages?.map(r => r.message) || [],
+        posts: trigger.posts?.map(p => ({
+          postId: p.postId,
+          mediaType: p.mediaType.toString(),
+          mediaUrl: p.mediaUrl,
+          caption: p.caption || undefined
+        })) || []
+      }
 
-  const onSaveTrigger = () => {
-    if (types && types.length > 0) {
-      mutate({ types })
+      // Determine configuration status based on data presence
+      const hasKeywords = config.keywords.include.length > 0
+      const hasReplyMessages = config.replyMessages.length > 0
+      const hasPosts = config.posts.length > 0
+
+      const status = hasKeywords && hasReplyMessages && hasPosts ? 'complete' as const :
+                    hasKeywords || hasReplyMessages || hasPosts ? 'partial' as const :
+                    'unconfigured' as const
+
+      const finalConfig = {
+        ...config,
+        status
+      }
+
+      console.log('Created trigger config:', finalConfig)
+
+      // Update Redux state with validated data
+      dispatch(TRIGGER({ 
+        trigger: { 
+          type: uiType,
+          types: [uiType],
+          config: finalConfig
+        } 
+      }))
+
+      console.log('Updated Redux state with trigger:', { uiType, config: finalConfig })
+      setIsInitialized(true)
     }
+  }, [automationData?.data, dispatch, isInitialized])
+
+  // Handle trigger removal with complete cleanup
+  const onRemoveTrigger = useCallback(async () => {
+    try {
+      console.log('Removing trigger')
+      
+      // Clear Redux state first
+      dispatch(TRIGGER({ 
+        trigger: { 
+          type: undefined,
+          types: [],
+          config: undefined,
+          keywords: [],
+          keyword: undefined
+        } 
+      }))
+
+      // Remove from database with complete cleanup
+      await saveChanges({ 
+        trigger: [],
+        keywords: [],
+        posts: []
+      })
+
+      // Force immediate refetch
+      await queryClient.invalidateQueries({ 
+        queryKey: ['automation-info', id],
+        exact: true,
+        refetchType: 'all'
+      })
+
+      toast.success('Trigger removed successfully')
+    } catch (error) {
+      console.error('Error removing trigger:', error)
+      toast.error('Failed to remove trigger')
+    }
+  }, [dispatch, saveChanges, queryClient, id])
+
+  // Set trigger with proper initialization
+  const onSetTrigger = useCallback(async (type: 'COMMENT' | 'DM') => {
+    console.log('Setting trigger type:', type)
+
+    // Map UI trigger type to API trigger type with validation
+    const apiType = type === 'DM' ? 'user-message' :
+                   type === 'COMMENT' ? 'post-comments' :
+                   null
+
+    if (!apiType) {
+      console.error('Invalid UI trigger type:', type)
+      return
+    }
+
+    console.log('Mapped to API type:', apiType)
+
+    try {
+      // Create fresh configuration with strict typing
+      const initialConfig = {
+        status: 'unconfigured' as 'unconfigured' | 'partial' | 'complete',
+        type: 'all' as 'all' | 'specific' | 'next',
+        keywords: { include: [] as string[] },
+        replyMessages: [] as string[],
+        posts: [] as Array<{
+          postId: string;
+          mediaType: string;
+          mediaUrl: string;
+          caption?: string;
+        }>
+      }
+
+      console.log('Setting initial config:', initialConfig)
+
+      // Update Redux state with fresh configuration
+      dispatch(TRIGGER({ 
+        trigger: { 
+          type,
+          types: [type],
+          config: initialConfig,
+          keywords: [],
+          keyword: undefined
+        } 
+      }))
+
+      console.log('Updated Redux state')
+
+      // Save to database with complete initialization and normalized type
+      await saveChanges({
+        trigger: [{
+          type: apiType, // Always use API type when saving to database
+          config: initialConfig
+        }],
+        keywords: [],
+        posts: []
+      })
+
+      console.log('Saved to database with normalized type:', apiType)
+
+      // Force immediate refetch
+      await queryClient.invalidateQueries({ 
+        queryKey: ['automation-info', id],
+        exact: true,
+        refetchType: 'all'
+      })
+
+      console.log('Invalidated queries')
+      toast.success('Trigger initialized successfully')
+    } catch (error) {
+      console.error('Error initializing trigger:', error)
+      toast.error('Failed to initialize trigger')
+
+      // Revert Redux state on error
+      dispatch(TRIGGER({ 
+        trigger: { 
+          types: [],
+          config: undefined,
+          keywords: [],
+          keyword: undefined
+        } 
+      }))
+    }
+  }, [dispatch, saveChanges, queryClient, id])
+
+  return { 
+    types, 
+    onSetTrigger,
+    onRemoveTrigger,
+    isInitialized
   }
-
-  return { types, onSetTrigger, onSaveTrigger, isPending }
 }
 
 export const useKeywords = (id: string) => {
@@ -404,23 +569,63 @@ export const useAutomationWorkflow = (id: string) => {
   
   const queryClient = useQueryClient()
   const { data: userData } = useQueryUser()
+  const { data: automationData } = useQueryAutomation(id)
   const isPro = userData?.data?.subscription?.plan === SUBSCRIPTION_PLAN.PRO
   const { saveChanges } = useAutomationSync(id)
 
-  const handleTriggerSelect = useCallback((type: string, config?: any) => {
+  // Initialize trigger configuration from database
+  useEffect(() => {
+    if (automationData?.data?.trigger && automationData.data.trigger.length > 0) {
+      const trigger = automationData.data.trigger[0]
+      
+      // Map API type to UI type
+      let uiType = trigger.type === 'user-message' ? 'DM' :
+                  trigger.type === 'post-comments' ? 'COMMENT' :
+                  trigger.type // Keep as is if already UI type
+
+      // Create configuration object with all saved data
+      const config = {
+        status: trigger.status || 'unconfigured',
+        type: (trigger as any).config?.type || 'all',
+        keywords: {
+          include: trigger.keywords?.map(k => k.word) || []
+        },
+        replyMessages: trigger.replyMessages?.map(r => r.message) || [],
+        posts: trigger.posts?.map(p => ({
+          postId: p.postId,
+          mediaType: p.mediaType.toString(),
+          mediaUrl: p.mediaUrl,
+          caption: p.caption || undefined
+        })) || []
+      }
+
+      // Update both selectedTriggers and triggerConfig states
+      setSelectedTriggers([uiType])
+      setTriggerConfig({
+        [uiType]: config
+      })
+    }
+  }, [automationData?.data])
+
+  const handleTriggerSelect = useCallback(async (type: string, config?: any) => {
     setSelectedTriggers(prev => {
       const newTriggers = prev.includes(type) 
         ? prev.filter(t => t !== type)
         : [...prev, type]
       
       // Save changes immediately when triggers are updated
-      saveChanges({
+      const save = async () => {
+        await saveChanges({
         trigger: newTriggers.map(t => ({
           type: t,
           config: t === type ? config : triggerConfig[t]
         }))
       })
+        // Invalidate queries to refetch fresh data
+        queryClient.invalidateQueries({ queryKey: ['automation-info', id] })
+      }
       
+      save()
       return newTriggers
     })
 
@@ -430,21 +635,23 @@ export const useAutomationWorkflow = (id: string) => {
         [type]: config
       }))
     }
-  }, [saveChanges, triggerConfig])
+  }, [saveChanges, triggerConfig, queryClient, id])
 
-  const handleTriggerConfig = useCallback((type: string, config: any) => {
+  const handleTriggerConfig = useCallback(async (type: string, config: any) => {
     setTriggerConfig(prev => ({
       ...prev,
       [type]: config
     }))
 
-    saveChanges({
+    await saveChanges({
       trigger: selectedTriggers.map(t => ({
         type: t,
         config: t === type ? config : triggerConfig[t]
       }))
     })
-  }, [saveChanges, selectedTriggers, triggerConfig])
+    // Invalidate queries to refetch fresh data
+    queryClient.invalidateQueries({ queryKey: ['automation-info', id] })
+  }, [saveChanges, selectedTriggers, triggerConfig, queryClient, id])
 
   const handleActionSelect = useCallback((type: string) => {
     setSelectedAction(type)

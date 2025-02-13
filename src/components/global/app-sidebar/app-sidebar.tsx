@@ -5,13 +5,14 @@ import {
   Settings,
   Users,
   HelpCircle,
+  Home,
+  Zap
 } from "lucide-react"
-import { HomeIcon } from "@/icons/home-icon"
-import { AutomationIcon } from "@/icons/automation-icon"
 import Image from "next/image"
 import Link from "next/link"
 import { useState, useEffect } from "react"
 import { useParams, usePathname } from "next/navigation"
+import { UserButton } from "@clerk/nextjs"
 
 import { NavMain } from "./nav-main"
 import { SidebarToggle } from "./sidebar-toggle"
@@ -45,12 +46,12 @@ export function AppSidebar({ onCollapse, defaultExpanded = true }: AppSidebarPro
       {
         title: "Home",
         url: `/dashboard/${params.slug}`,
-        icon: HomeIcon,
+        icon: Home,
       },
       {
         title: "Automations",
         url: `/dashboard/${params.slug}/automations`,
-        icon: AutomationIcon,
+        icon: Zap,
       },
       {
         title: "Contacts",
@@ -137,14 +138,35 @@ export function AppSidebar({ onCollapse, defaultExpanded = true }: AppSidebarPro
 
           {/* Additional Features */}
           <div className="pb-[17px]">
+            {/* Profile Button */}
+            <div className="border-t border-gray-200/30 pt-6 mb-4">
+              <div className="px-4">
+                <div className={`relative flex items-center h-[40px] ${isExpanded ? 'w-[218px]' : 'w-[44px]'} rounded-2xl bg-gradient-to-br from-[#d8d2e9] via-[#e4dff2] to-[#d5cfe6] shadow-[0_2px_4px_rgba(0,0,0,0.06)] transition-all hover:from-[#e0daf1] hover:via-[#ece7fa] hover:to-[#dfd9eb] hover:shadow-[0_3px_6px_rgba(0,0,0,0.1)]`}>
+                  <div className="absolute inset-0 rounded-2xl bg-gradient-to-tr from-white/20 via-white/5 to-transparent pointer-events-none" />
+                  <div className="relative flex w-full items-center pl-[13px]">
+                    <UserButton
+                      afterSignOutUrl="/"
+                      appearance={{
+                        elements: {
+                          avatarBox: "h-[24px] w-[24px]"
+                        }
+                      }}
+                    />
+                    {isExpanded && (
+                      <span className="truncate pl-[18px] text-[17px] font-medium leading-6 text-gray-700">Profile</span>
+                    )}
+                  </div>
+                </div>
+              </div>
+            </div>
             {/* Settings Button */}
             <div className="border-t border-gray-200/30 pt-6">
               <div className="px-4">
                 <Link
                   href="/settings"
-                  className="group relative flex h-[40px] w-[218px] items-center rounded-2xl bg-gradient-to-br from-[#d8d2e9] via-[#e4dff2] to-[#d5cfe6] shadow-[0_2px_4px_rgba(0,0,0,0.06)] transition-all hover:from-[#e0daf1] hover:via-[#ece7fa] hover:to-[#dfd9eb] hover:shadow-[0_3px_6px_rgba(0,0,0,0.1)]"
+                  className={`relative flex h-[40px] ${isExpanded ? 'w-[218px]' : 'w-[44px]'} items-center rounded-2xl bg-gradient-to-br from-[#d8d2e9] via-[#e4dff2] to-[#d5cfe6] shadow-[0_2px_4px_rgba(0,0,0,0.06)] transition-all hover:from-[#e0daf1] hover:via-[#ece7fa] hover:to-[#dfd9eb] hover:shadow-[0_3px_6px_rgba(0,0,0,0.1)]`}
                 >
-                  <div className="absolute inset-0 bg-gradient-to-tr from-white/20 via-white/5 to-transparent" />
+                  <div className="absolute inset-0 rounded-2xl bg-gradient-to-tr from-white/20 via-white/5 to-transparent pointer-events-none" />
                   <div className="relative flex w-full items-center pl-[13px]">
                     <div className="flex w-[24px] items-center justify-center">
                       <Settings className="h-[18px] w-[18px] text-gray-600" />

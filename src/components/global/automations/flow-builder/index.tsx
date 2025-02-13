@@ -47,12 +47,16 @@ const TRIGGER_DETAILS: Record<string, TriggerDetails> = {
     name: 'Post Comments',
     icon: MessageSquare
   },
-  'post-likes': {
-    name: 'Post Likes',
-    icon: Instagram
+  'COMMENT': {
+    name: 'Post Comments',
+    icon: MessageSquare
   },
-  'direct-messages': {
-    name: 'Direct Messages',
+  'user-message': {
+    name: 'Instagram Message',
+    icon: MessageSquare
+  },
+  'DM': {
+    name: 'Instagram Message',
     icon: MessageSquare
   }
 }
@@ -75,7 +79,7 @@ const getConfigurationStatus = (config?: TriggerConfig): TriggerConfigurationSta
   if (config.status) return config.status
 
   // Determine status based on config content
-  const hasPost = config.type === 'specific' && !!config.postId
+  const hasPost = config.type === 'specific' && config.posts && config.posts.length > 0
   const hasKeywords = (config.keywords?.include ?? []).length > 0
   const hasReplyMessages = (config.replyMessages ?? []).length > 0
 
@@ -108,22 +112,54 @@ const FlowBuilder: React.FC<FlowBuilderProps> = ({ id }) => {
   // Handle trigger selection
   const handleTriggerSelect = React.useCallback((triggerId: string, triggerName: string, icon: React.ComponentType<any>) => {
     const newTrigger = { id: triggerId, name: triggerName, icon }
+    
+    // Clear previous trigger configuration
+    setTriggerConfig({})
+    
+    // Set new trigger
     setSelectedTriggers([newTrigger])
     
-    // Save the trigger selection with initial configuration state
+    // Save the trigger selection with fresh configuration state
     saveChanges({
       trigger: [{
         type: triggerId,
         config: {
-          status: 'unconfigured'
-        } as TriggerConfig
+          status: 'unconfigured',
+          type: 'all',
+          keywords: { include: [] },
+          replyMessages: [],
+          posts: []
+        }
       }]
     })
+
+    // Update nodes with fresh configuration
+    setNodes(nds => nds.map(node => {
+      if (node.type === 'trigger') {
+        return {
+          ...node,
+          data: {
+            ...node.data,
+            selectedTriggers: [newTrigger],
+            config: {
+              status: 'unconfigured',
+              type: 'all',
+              keywords: { include: [] },
+              replyMessages: [],
+              posts: []
+            },
+            configurationStatus: 'unconfigured',
+            type: triggerId
+          }
+        }
+      }
+      return node
+    }))
 
     setIsTriggerSidebarOpen(false)
     setSelectedTriggerForConfig(newTrigger)
     setIsTriggerConfigurationOpen(true)
-  }, [saveChanges])
+  }, [saveChanges, setNodes])
 
   // Handle trigger configuration
   const handleTriggerConfigurationOpen = React.useCallback((trigger: { id: string; name: string; icon: React.ComponentType<any> }) => {
@@ -134,15 +170,15 @@ const FlowBuilder: React.FC<FlowBuilderProps> = ({ id }) => {
   // Handle trigger removal
   const handleTriggerRemove = React.useCallback(async (triggerId: string) => {
     try {
-      // Remove from UI state first
-      setSelectedTriggers(prev => prev.filter(trigger => trigger.id !== triggerId))
+      console.log('Removing trigger:', triggerId)
+      
+      // Clear all trigger-related states
+      setSelectedTriggers([])
+      setSelectedTriggerForConfig(null)
+      setTriggerConfig({})
+      setIsTriggerConfigurationOpen(false)
 
-      // Save changes to remove the trigger from the database
-      await saveChanges({
-        trigger: [] // Empty array to trigger deletion
-      })
-
-      // Update nodes to reflect the removal
+      // Update nodes to reset trigger node state
       setNodes(nds => nds.map(node => {
         if (node.type === 'trigger') {
           return {
@@ -151,19 +187,18 @@ const FlowBuilder: React.FC<FlowBuilderProps> = ({ id }) => {
               ...node.data,
               selectedTriggers: [],
               config: undefined,
-              configurationStatus: 'unconfigured'
+              configurationStatus: 'unconfigured',
+              type: 'New Trigger'
             }
           }
         }
         return node
       }))
 
-      // Clear trigger configuration
-      setTriggerConfig({})
-
-      // Close configuration sidebar if open
-      setIsTriggerConfigurationOpen(false)
-      setSelectedTriggerForConfig(null)
+      // Save changes to remove the trigger from the database
+      await saveChanges({
+        trigger: [] // Empty array to trigger deletion
+      })
 
       toast.success('Trigger removed successfully')
     } catch (error) {
@@ -276,10 +311,26 @@ const FlowBuilder: React.FC<FlowBuilderProps> = ({ id }) => {
       // Initialize selected triggers from saved data without auto-opening configuration
       if (automationData.trigger && automationData.trigger.length > 0) {
         const savedTrigger = automationData.trigger[0]
-        const triggerDetails = getTriggerDetails(savedTrigger.type)
+        console.log('Initializing trigger from data:', savedTrigger)
+
+        // Map API trigger type to UI type with simplified mapping
+        let triggerType = savedTrigger.type
+        if (triggerType === 'user-message') {
+          triggerType = 'DM'
+        } else if (triggerType === 'post-comments') {
+          triggerType = 'COMMENT'
+        }
+
+        const triggerDetails = getTriggerDetails(triggerType)
+        console.log('Mapped trigger details:', { 
+          originalType: savedTrigger.type, 
+          mappedType: triggerType, 
+          details: triggerDetails 
+        })
+
         if (triggerDetails) {
           setSelectedTriggers([{
-            id: savedTrigger.type,
+            id: triggerType,
             name: triggerDetails.name,
             icon: triggerDetails.icon
           }])
@@ -296,7 +347,7 @@ const FlowBuilder: React.FC<FlowBuilderProps> = ({ id }) => {
         position: { x: 100, y: 100 },
         data: {
           type: automationData.trigger.length > 0 ? automationData.trigger[0].type : 'New Trigger',
-          keywords: automationData.trigger.length > 0 ? automationData.keywords : [],
+          keywords: automationData.trigger.length > 0 ? automationData.trigger[0].keywords : [],
           selectedActions,
           selectedTriggers,
           onTriggerSelect: handleTriggerSelect,

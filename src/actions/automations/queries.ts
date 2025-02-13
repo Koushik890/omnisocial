@@ -48,42 +48,130 @@ export const createAutomation = async (clerkId: string, id?: string) => {
 }
 
 export const getAutomations = async (clerkId: string) => {
-  return await client.user.findUnique({
-    where: {
-      clerkId,
-    },
-    select: {
-      automations: {
-        orderBy: {
-          createdAt: 'asc',
-        },
-        include: {
-          keywords: true,
-          listener: true,
+  try {
+    const result = await client.user.findUnique({
+      where: {
+        clerkId,
+      },
+      select: {
+        automations: {
+          select: {
+            id: true,
+            name: true,
+            active: true,
+            createdAt: true,
+            updatedAt: true,
+            status: true,
+            trigger: true,
+            listener: {
+              select: {
+                dmCount: true,
+                commentCount: true
+              }
+            }
+          },
+          orderBy: {
+            createdAt: 'asc',
+          }
         },
       },
-    },
-  })
+    })
+
+    if (!result) {
+      console.error('No user found with clerkId:', clerkId)
+      return null
+    }
+
+    return result
+  } catch (error) {
+    console.error('Error in getAutomations:', error)
+    throw error
+  }
 }
 
 export const findAutomation = async (id: string) => {
-  return await client.automation.findUnique({
-    where: {
-      id,
-    },
-    include: {
-      keywords: true,
-      trigger: true,
-      posts: true,
-      listener: true,
-      User: {
-        select: {
-          subscription: true,
-          integrations: true,
+  try {
+    const result = await client.automation.findUnique({
+      where: {
+        id,
+      },
+      include: {
+        trigger: {
+          include: {
+            posts: true,
+            keywords: true,
+            replyMessages: true
+          }
+        },
+        listener: true,
+        User: {
+          select: {
+            subscription: true,
+            integrations: true,
+          },
         },
       },
-    },
-  })
+    })
+
+    if (!result) {
+      console.error('No automation found with id:', id)
+      return null
+    }
+
+    // Transform trigger data to include proper configuration
+    if (result.trigger?.length > 0) {
+      console.log('Raw trigger data:', result.trigger) // Debug log
+
+      result.trigger = result.trigger.map(trigger => {
+        // Determine configuration status based on data
+        const hasPost = trigger.posts.length > 0
+        const hasKeywords = trigger.keywords.length > 0
+        const hasReplyMessages = trigger.replyMessages.length > 0
+        
+        const status = hasPost && hasKeywords && hasReplyMessages ? 'complete' :
+                      hasPost || hasKeywords || hasReplyMessages ? 'partial' :
+                      'unconfigured'
+
+        console.log('Processing trigger:', {
+          type: trigger.type,
+          status,
+          hasPost,
+          hasKeywords,
+          hasReplyMessages
+        })
+
+        // Create base trigger object with all data
+        const transformedTrigger = {
+          ...trigger,
+          status,
+          type: trigger.type, // Keep original API type
+          config: {
+            status,
+            type: 'all', // Default to 'all'
+            posts: trigger.posts.map(post => ({
+              postId: post.postId,
+              mediaType: post.mediaType,
+              mediaUrl: post.mediaUrl,
+              caption: post.caption
+            })),
+            keywords: {
+              include: trigger.keywords.map(k => k.word)
+            },
+            replyMessages: trigger.replyMessages.map(r => r.message)
+          }
+        }
+
+        console.log('Transformed trigger:', transformedTrigger)
+        return transformedTrigger
+      })
+    }
+
+    console.log('Final automation data:', result)
+    return result
+  } catch (error) {
+    console.error('Error in findAutomation:', error)
+    throw error
+  }
 }
 
 export const updateAutomation = async (
@@ -186,64 +274,97 @@ export const deleteTrigger = async (automationId: string) => {
 }
 
 export const addTrigger = async (automationId: string, trigger: string[], config?: Record<string, any>) => {
+  console.log('Adding trigger:', { automationId, trigger, config }) // Debug log
+
   // If trigger array is empty, use the dedicated delete function
   if (trigger.length === 0) {
     return await deleteTrigger(automationId)
   }
 
-  const configData = config ? { config } : {}
-  
-  // First, delete any existing triggers
-  await client.trigger.deleteMany({
-    where: {
-      automationId
-    }
-  })
+  try {
+    // Delete any existing triggers (this will cascade to related records)
+    await client.trigger.deleteMany({
+      where: {
+        automationId
+      }
+    })
 
-  // Then create the new trigger(s)
-  if (trigger.length === 2) {
-    return await client.automation.update({
-      where: { id: automationId },
+    // Create new trigger with its configurations
+    const result = await client.automation.update({
+      where: {
+        id: automationId,
+      },
       data: {
         trigger: {
-          createMany: {
-            data: [
-              { type: trigger[0], ...configData },
-              { type: trigger[1], ...configData }
-            ],
-          },
-        },
+          create: {
+            type: trigger[0],
+            status: config?.status || 'unconfigured',
+            ...(config?.posts && {
+              posts: {
+                create: config.posts.map((post: any) => ({
+                  postId: post.postId,
+                  mediaType: post.mediaType,
+                  mediaUrl: post.mediaUrl,
+                  caption: post.caption
+                }))
+              }
+            }),
+            ...(config?.keywords && {
+              keywords: {
+                create: config.keywords.include.map((word: string) => ({
+                  word
+                }))
+              }
+            }),
+            ...(config?.replyMessages && {
+              replyMessages: {
+                create: config.replyMessages.map((message: string) => ({
+                  message
+                }))
+              }
+            })
+          }
+        }
       },
+      include: {
+        trigger: {
+          include: {
+            posts: true,
+            keywords: true,
+            replyMessages: true
+          }
+        }
+      }
     })
+
+    console.log('Trigger added successfully:', result) // Debug log
+    return result
+  } catch (error) {
+    console.error('Error adding trigger:', error)
+    throw error
   }
-  
-  return await client.automation.update({
-    where: {
-      id: automationId,
-    },
-    data: {
-      trigger: {
-        create: {
-          type: trigger[0],
-          ...configData
-        },
-      },
-    },
-  })
 }
 
 export const addKeyWord = async (automationId: string, keyword: string) => {
-  return client.automation.update({
-    where: {
-      id: automationId,
-    },
+  // First get the trigger ID for this automation
+  const automation = await client.automation.findUnique({
+    where: { id: automationId },
+    include: { trigger: true }
+  })
+
+  if (!automation?.trigger?.[0]?.id) {
+    throw new Error('No trigger found for this automation')
+  }
+
+  return client.trigger.update({
+    where: { id: automation.trigger[0].id },
     data: {
       keywords: {
         create: {
-          word: keyword,
-        },
-      },
-    },
+          word: keyword
+        }
+      }
+    }
   })
 }
 
@@ -254,7 +375,7 @@ export const deleteKeywordQuery = async (id: string) => {
 }
 
 export const addPost = async (
-  autmationId: string,
+  automationId: string,
   posts: {
     postid: string
     caption?: string
@@ -262,17 +383,30 @@ export const addPost = async (
     mediaType: 'IMAGE' | 'VIDEO' | 'CAROSEL_ALBUM'
   }[]
 ) => {
-  return await client.automation.update({
-    where: {
-      id: autmationId,
-    },
+  // First get the trigger ID for this automation
+  const automation = await client.automation.findUnique({
+    where: { id: automationId },
+    include: { trigger: true }
+  })
+
+  if (!automation?.trigger?.[0]?.id) {
+    throw new Error('No trigger found for this automation')
+  }
+
+  return client.trigger.update({
+    where: { id: automation.trigger[0].id },
     data: {
       posts: {
         createMany: {
-          data: posts,
-        },
-      },
-    },
+          data: posts.map(post => ({
+            postId: post.postid,
+            mediaType: post.mediaType,
+            mediaUrl: post.media,
+            caption: post.caption
+          }))
+        }
+      }
+    }
   })
 }
 

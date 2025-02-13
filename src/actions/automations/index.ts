@@ -46,16 +46,35 @@ export const createAutomations = async (id?: string) => {
 }
 
 export const getAllAutomations = async () => {
-  const user = await onCurrentUser()
-  if (user.status !== 200 || !user.data) {
-    return { status: 401, data: [] }
-  }
-
   try {
-    const automations = await getAutomations(user.data.id)
-    if (automations) return { status: 200, data: automations.automations }
-    return { status: 404, data: [] }
+    const user = await onCurrentUser()
+    if (user.status !== 200 || !user.data) {
+      return { status: 401, data: [] }
+    }
+
+    // Find user in database
+    const dbUser = await findUser(user.data.id)
+    if (!dbUser) {
+      return { status: 404, data: [] }
+    }
+
+    const result = await getAutomations(user.data.id)
+    if (!result || !result.automations) {
+      return { status: 404, data: [] }
+    }
+
+    const transformedAutomations = result.automations.map(automation => ({
+      id: automation.id,
+      name: automation.name || 'Untitled',
+      runs: automation.listener ? (automation.listener.dmCount + automation.listener.commentCount) : 0,
+      status: automation.active ? 'Live' : 'Draft',
+      lastPublished: automation.updatedAt ? new Date(automation.updatedAt).toLocaleDateString() : 'Never',
+      active: automation.active
+    }))
+
+    return { status: 200, data: transformedAutomations }
   } catch (error) {
+    console.error('Error in getAllAutomations:', error)
     return { status: 500, data: [] }
   }
 }

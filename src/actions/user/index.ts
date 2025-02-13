@@ -92,7 +92,26 @@ export const onUserInfo = async (): Promise<UserResponse> => {
     }
 
     const profile = await retryOperation(async () => {
-      const result = await findUser(user.data.id)
+      // First try to find the user
+      let result = await findUser(user.data.id)
+      
+      // If user doesn't exist, try to create them
+      if (!result) {
+        // Only proceed if we have all required user data
+        if (user.data.firstName && user.data.lastName && user.data.emailAddresses?.[0]?.emailAddress) {
+          const created = await createUser(
+            user.data.id,
+            user.data.firstName,
+            user.data.lastName,
+            user.data.emailAddresses[0].emailAddress
+          )
+          if (created) {
+            // Fetch the complete user profile after creation
+            result = await findUser(user.data.id)
+          }
+        }
+      }
+      
       if (!result) {
         throw new Error('User not found')
       }

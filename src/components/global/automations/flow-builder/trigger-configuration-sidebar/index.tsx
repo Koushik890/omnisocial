@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useCallback } from 'react'
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet'
 import { X, Instagram, Hash, MessageSquare, ChevronRight, Pencil } from 'lucide-react'
 import { motion } from 'framer-motion'
@@ -14,6 +14,7 @@ import { InstagramPostProps } from '@/types/posts.type'
 import { useAutomationSync } from '@/hooks/use-automations'
 import { useQueryAutomation } from '@/hooks/user-queries'
 import { TriggerConfig, TriggerConfigurationStatus } from '@/types/automation'
+import { useQueryClient } from '@tanstack/react-query'
 
 interface TriggerConfigurationSidebarProps {
   isOpen: boolean
@@ -81,6 +82,7 @@ export function TriggerConfigurationSidebar({
   const [replyMessage, setReplyMessage] = useState('')
   const { saveChanges } = useAutomationSync(automationId)
   const { data: automationData } = useQueryAutomation(automationId)
+  const queryClient = useQueryClient()
 
   // Reset all configuration states when selectedTrigger changes or is removed
   useEffect(() => {
@@ -92,40 +94,49 @@ export function TriggerConfigurationSidebar({
       return
     }
 
-    // When a new trigger is selected, initialize states from automation data
-    if (automationData?.data) {
-      const trigger = automationData.data.trigger?.find((t) => t.type === selectedTrigger.id)
+    // When a new trigger is selected or page is reloaded, initialize states from automation data
+    if (automationData?.data?.trigger) {
+      const trigger = automationData.data.trigger.find((t) => {
+        // Map API type to UI type for comparison
+        const uiType = t.type === 'user-message' ? 'DM' :
+                      t.type === 'post-comments' ? 'COMMENT' :
+                      t.type
+        return uiType === selectedTrigger.id
+      })
       
-      if (trigger?.config) {
-        try {
-          const config = typeof trigger.config === 'string' 
-            ? JSON.parse(trigger.config) 
-            : trigger.config
-          
-          // Only set states if the config belongs to the current trigger
-          if (config.type === 'specific' && config.postId) {
-            setSelectedPost({
-              id: config.postId,
-              media_url: config.mediaUrl,
-              media_type: config.mediaType,
-              caption: config.caption
-            } as InstagramPostProps)
-          }
-          
-          // Only update keywords if they're not already set
-          if (!keywords.include.length) {
-            setKeywords(config.keywords || { include: [] })
-          }
-          
-          if (!replyMessage) {
-            setReplyMessage(config.replyMessages ? config.replyMessages.join(' | ') : '')
-          }
-        } catch (error) {
-          console.error('Error parsing trigger config:', error)
+      if (trigger) {
+        // Handle posts
+        if (trigger.posts && trigger.posts.length > 0) {
+          const post = trigger.posts[0] // Get the first post
+          setSelectedPost({
+            id: post.postId,
+            media_url: post.mediaUrl,
+            media_type: post.mediaType,
+            caption: post.caption || undefined
+          } as InstagramPostProps)
+        }
+        
+        // Handle keywords
+        if (trigger.keywords && trigger.keywords.length > 0) {
+          setKeywords({
+            include: trigger.keywords.map(k => k.word)
+          })
+        }
+        
+        // Handle reply messages
+        if (trigger.replyMessages && trigger.replyMessages.length > 0) {
+          setReplyMessage(trigger.replyMessages.map(r => r.message).join(' | '))
+        }
+
+        // If there's a trigger but no configurations, ensure states are reset
+        if (!trigger.posts?.length && !trigger.keywords?.length && !trigger.replyMessages?.length) {
+          setSelectedPost(null)
+          setKeywords({ include: [] })
+          setReplyMessage('')
         }
       }
     }
-  }, [selectedTrigger, automationData?.data, keywords.include.length, replyMessage])
+  }, [selectedTrigger, automationData?.data])
 
   const handlePostSelection = (selection: { type: 'specific' | 'all' | 'next'; postId?: string }, post?: InstagramPostProps) => {
     if (selection.type === 'specific' && post) {
@@ -133,15 +144,17 @@ export function TriggerConfigurationSidebar({
       setSelectedPost(post)
       setIsPostSelectionModalOpen(false)
 
-      // Then update the configuration
+      // Then update the configuration with API type
       const config: Partial<TriggerConfig> = {
         type: selection.type,
-        postId: post.id,
-        mediaType: post.media_type,
-        mediaUrl: post.media_url,
-        caption: post.caption,
         keywords: keywords,
         replyMessages: replyMessage ? replyMessage.split(' | ') : undefined,
+        posts: [{
+          postId: post.id,
+          mediaType: post.media_type,
+          mediaUrl: post.media_url,
+          caption: post.caption
+        }],
         status: updateConfigurationStatus({
           type: selection.type,
           postId: post.id,
@@ -154,12 +167,17 @@ export function TriggerConfigurationSidebar({
       }
 
       if (onTriggerConfig && selectedTrigger) {
+        // Map UI type to API type when saving
+        const apiType = selectedTrigger.id === 'DM' ? 'user-message' :
+                       selectedTrigger.id === 'COMMENT' ? 'post-comments' :
+                       selectedTrigger.id
+
         // Wrap in Promise.resolve to ensure state updates complete before saving
         Promise.resolve().then(() => {
-          onTriggerConfig(selectedTrigger.id, config)
+          onTriggerConfig(apiType, config)
         })
       }
-    } else if (selection.type === 'all' || selection.type === 'next') {
+    } else {
       // Update local state first
       setSelectedPost(null)
       setIsPostSelectionModalOpen(false)
@@ -169,6 +187,7 @@ export function TriggerConfigurationSidebar({
         type: selection.type,
         keywords: keywords,
         replyMessages: replyMessage ? replyMessage.split(' | ') : undefined,
+        posts: [], // Clear posts array when no specific post is selected
         status: updateConfigurationStatus({
           type: selection.type,
           keywords: keywords,
@@ -177,9 +196,14 @@ export function TriggerConfigurationSidebar({
       }
 
       if (onTriggerConfig && selectedTrigger) {
+        // Map UI type to API type when saving
+        const apiType = selectedTrigger.id === 'DM' ? 'user-message' :
+                       selectedTrigger.id === 'COMMENT' ? 'post-comments' :
+                       selectedTrigger.id
+
         // Wrap in Promise.resolve to ensure state updates complete before saving
         Promise.resolve().then(() => {
-          onTriggerConfig(selectedTrigger.id, config)
+          onTriggerConfig(apiType, config)
         })
       }
     }
@@ -291,6 +315,25 @@ export function TriggerConfigurationSidebar({
       onTriggerConfig(selectedTrigger.id, config)
     }
   }
+
+  const handleTriggerConfig = useCallback(async (type: string, config: any) => {
+    if (!selectedTrigger) return;
+
+    // Map UI type to API type for consistency
+    const apiType = type === 'DM' ? 'user-message' :
+                   type === 'COMMENT' ? 'post-comments' :
+                   type
+
+    await saveChanges({
+      trigger: [{
+        type: apiType,
+        config: config
+      }]
+    })
+    
+    // Invalidate queries to refetch fresh data
+    queryClient.invalidateQueries({ queryKey: ['automation-info', automationId] })
+  }, [saveChanges, selectedTrigger, queryClient, automationId])
 
   return (
     <>
