@@ -1,17 +1,11 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
-// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
-// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
-
 generator client {
-  provider = "prisma-client-js"
+  provider        = "prisma-client-js"
   previewFeatures = ["driverAdapters"]
 }
 
 datasource db {
-  provider = "postgresql"
-  url      = env("DATABASE_URL")
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
   directUrl = env("DIRECT_URL")
 }
 
@@ -22,110 +16,115 @@ model User {
   firstname    String?
   lastname     String?
   createdAt    DateTime       @default(now())
-  subscription Subscription?
-  integrations Integrations[]
   automations  Automation[]
+  integrations Integrations[]
+  subscription Subscription?
 }
 
 model Subscription {
-  id         String            @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  User       User?             @relation(fields: [userId], references: [id], onDelete: Cascade)
-  userId     String?           @unique @db.Uuid
-  createdAt  DateTime          @default(now())
-  plan       SUBSCRIPTION_PLAN @default(FREE)
-  updatedAt  DateTime          @default(now())
-  customerId String?           @unique @map("customer_id")
+  id                            String               @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  userId                        String?              @unique @db.Uuid
+  createdAt                     DateTime             @default(now())
+  plan                          SUBSCRIPTION_PLAN    @default(FREE)
+  updatedAt                     DateTime             @default(now())
+  customerId                    String?              @unique @map("customer_id")
   lemonSqueezyCustomerPortalUrl String?
-  subscriptionStatus        SUBSCRIPTION_STATUS?
+  subscriptionStatus            SUBSCRIPTION_STATUS?
+  User                          User?                @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
 model Integrations {
   id          String       @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   name        INTEGRATIONS @default(INSTAGRAM)
   createdAt   DateTime     @default(now())
-  User        User?        @relation(fields: [userId], references: [id], onDelete: Cascade)
   userId      String?      @db.Uuid
   token       String       @unique
   expiresAt   DateTime?
   instagramId String?      @unique
+  User        User?        @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
 model Automation {
-  id        String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  name      String    @default("Untitled")
-  createdAt DateTime  @default(now())
-  updatedAt DateTime  @updatedAt
-  active    Boolean   @default(false)
-  trigger   Trigger[]
-  listener  Listener?
-  dms       Dms[]
-  User      User?     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  userId    String?   @db.Uuid
+  id        String           @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  name      String           @default("Untitled")
+  createdAt DateTime         @default(now())
+  updatedAt DateTime         @updatedAt
+  active    Boolean          @default(false)
+  userId    String?          @db.Uuid
   config    Json?
   status    AutomationStatus @default(DRAFT)
+  User      User?            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  dms       Dms[]
+  listener  Listener?
+  trigger   Trigger[]
 }
 
 model Dms {
   id           String      @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  Automation   Automation? @relation(fields: [automationId], references: [id])
   automationId String?     @db.Uuid
   createdAt    DateTime    @default(now())
   senderId     String?
   reciever     String?
   message      String?
+  Automation   Automation? @relation(fields: [automationId], references: [id])
 }
 
 model Post {
-  id           String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  postId       String
-  mediaType    MEDIATYPE @default(IMAGE)
-  mediaUrl     String
-  caption      String?
-  trigger      Trigger  @relation(fields: [triggerId], references: [id], onDelete: Cascade)
-  triggerId    String   @db.Uuid
+  id        String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  postId    String
+  mediaType MEDIATYPE @default(IMAGE)
+  mediaUrl  String
+  caption   String?
+  triggerId String    @db.Uuid
+  trigger   Trigger   @relation(fields: [triggerId], references: [id], onDelete: Cascade)
 
   @@index([triggerId])
 }
 
 model Listener {
-  id           String     @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  Automation   Automation @relation(fields: [automationId], references: [id], onDelete: Cascade)
-  automationId String     @unique @db.Uuid
-  listener     LISTENERS  @default(MESSAGE)
-  prompt       String
+  id           String        @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  automationId String        @unique @db.Uuid
+  type         ACTION_TYPE   @default(MESSAGE)
+  status       ACTION_STATUS @default(UNCONFIGURED)
+  prompt       String?
+  message      String?
   commentReply String?
-  dmCount      Int        @default(0)
-  commentCount Int        @default(0)
+  dmCount      Int           @default(0)
+  commentCount Int           @default(0)
+  metadata     Json?
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+  Automation   Automation    @relation(fields: [automationId], references: [id], onDelete: Cascade)
 }
 
 model Trigger {
-  id           String      @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  type         String
-  status       String      @default("unconfigured") // can be "unconfigured", "partial", or "complete"
-  Automation   Automation? @relation(fields: [automationId], references: [id], onDelete: Cascade)
-  automationId String?     @db.Uuid
-  posts        Post[]
-  keywords     Keyword[]
+  id            String         @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  type          String
+  status        String         @default("unconfigured")
+  automationId  String?        @db.Uuid
+  keywords      Keyword[]
+  posts         Post[]
   replyMessages ReplyMessage[]
+  Automation    Automation?    @relation(fields: [automationId], references: [id], onDelete: Cascade)
 
   @@index([automationId])
 }
 
 model Keyword {
-  id           String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  word         String
-  trigger      Trigger  @relation(fields: [triggerId], references: [id], onDelete: Cascade)
-  triggerId    String   @db.Uuid
+  id        String  @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  word      String
+  triggerId String  @db.Uuid
+  trigger   Trigger @relation(fields: [triggerId], references: [id], onDelete: Cascade)
 
   @@unique([triggerId, word])
   @@index([triggerId])
 }
 
 model ReplyMessage {
-  id           String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  message      String
-  trigger      Trigger  @relation(fields: [triggerId], references: [id], onDelete: Cascade)
-  triggerId    String   @db.Uuid
+  id        String  @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  message   String
+  triggerId String  @db.Uuid
+  trigger   Trigger @relation(fields: [triggerId], references: [id], onDelete: Cascade)
 
   @@index([triggerId])
 }
@@ -161,4 +160,15 @@ enum AutomationStatus {
   DRAFT
   PUBLISHED
   ARCHIVED
+}
+
+enum ACTION_TYPE {
+  MESSAGE
+  OMNIAI
+}
+
+enum ACTION_STATUS {
+  UNCONFIGURED
+  CONFIGURED
+  COMPLETED
 }

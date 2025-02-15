@@ -12,6 +12,7 @@ import styles from './action-node.module.css'
 
 interface ActionNodeProps {
   data: {
+    id: string
     listener: {
       listener: 'OMNIAI' | 'MESSAGE'
       prompt: string
@@ -21,9 +22,11 @@ interface ActionNodeProps {
       message?: string
     }
   }
+  onMessageUpdate?: (actionId: string, message: string) => void
+  onPromptUpdate?: (actionId: string, prompt: string) => void
 }
 
-export const ActionNode: React.FC<ActionNodeProps> = ({ data }) => {
+export const ActionNode: React.FC<ActionNodeProps> = ({ data, onMessageUpdate, onPromptUpdate }) => {
   const [isConfigOpen, setIsConfigOpen] = useState(false)
   const [isAiPromptModalOpen, setIsAiPromptModalOpen] = useState(false)
   const [isViewPromptModalOpen, setIsViewPromptModalOpen] = useState(false)
@@ -33,12 +36,22 @@ export const ActionNode: React.FC<ActionNodeProps> = ({ data }) => {
   const handleConfigSelect = (actionType: string, config?: any) => {
     if (actionType === 'text' && config?.message) {
       data.listener.message = config.message
+      onMessageUpdate?.(data.id, config.message)
+    }
+    setIsConfigOpen(false)
+  }
+
+  const handleMessageDelete = () => {
+    if (isMessageAction) {
+      data.listener.message = ''
+      onMessageUpdate?.(data.id, '')
     }
     setIsConfigOpen(false)
   }
 
   const handleAiPromptSave = (prompt: string) => {
     data.listener.prompt = prompt
+    onPromptUpdate?.(data.id, prompt)
   }
 
   const handleNodeClick = () => {
@@ -137,6 +150,8 @@ export const ActionNode: React.FC<ActionNodeProps> = ({ data }) => {
           isOpen={isConfigOpen}
           onClose={() => setIsConfigOpen(false)}
           onSelect={handleConfigSelect}
+          initialMessage={data.listener.message}
+          onMessageDelete={handleMessageDelete}
         />
       ) : (
         <>

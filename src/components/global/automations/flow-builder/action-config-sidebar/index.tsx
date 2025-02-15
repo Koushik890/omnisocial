@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet'
 import { X, Type, Image, Video, Clock, PlayCircle, LayoutGrid, FileImage, CreditCard, Zap, MessageCircle } from 'lucide-react'
 import { motion } from 'framer-motion'
@@ -11,6 +11,8 @@ interface ActionConfigSidebarProps {
   isOpen: boolean
   onClose: () => void
   onSelect: (actionType: string, config?: any) => void
+  initialMessage?: string
+  onMessageDelete?: () => void
 }
 
 const ACTION_OPTIONS = [
@@ -78,12 +80,20 @@ export const ActionConfigSidebar: React.FC<ActionConfigSidebarProps> = ({
   isOpen,
   onClose,
   onSelect,
+  initialMessage,
+  onMessageDelete
 }) => {
   const [isTextModalOpen, setIsTextModalOpen] = useState(false)
-  const [selectedText, setSelectedText] = useState<string | null>(null)
+  const [selectedText, setSelectedText] = useState<string | null>(initialMessage || null)
+
+  useEffect(() => {
+    if (initialMessage) {
+      setSelectedText(initialMessage)
+    }
+  }, [initialMessage])
 
   const handleOptionClick = (option: typeof ACTION_OPTIONS[0]) => {
-    if (option.isDisabled) return
+    if (option.isDisabled || selectedText) return // Disable click if there's already a selected message
 
     if (option.id === 'text') {
       setIsTextModalOpen(true)
@@ -96,6 +106,12 @@ export const ActionConfigSidebar: React.FC<ActionConfigSidebarProps> = ({
     setSelectedText(text)
     onSelect('text', { message: text })
     setIsTextModalOpen(false)
+  }
+
+  const handleMessageDelete = () => {
+    setSelectedText(null)
+    onSelect('text', { message: null, status: 'UNCONFIGURED' })
+    onMessageDelete?.()
   }
 
   return (
@@ -138,6 +154,13 @@ export const ActionConfigSidebar: React.FC<ActionConfigSidebarProps> = ({
                 <div className={styles.selectedActionHeader}>
                   <MessageCircle className={styles.selectedActionIcon} />
                   <h4 className={styles.selectedActionTitle}>Selected Message</h4>
+                  <button 
+                    onClick={handleMessageDelete}
+                    className={styles.deleteButton}
+                    aria-label="Delete message"
+                  >
+                    <X className={styles.deleteIcon} />
+                  </button>
                 </div>
                 <div className={styles.selectedActionContent}>
                   <p className={styles.selectedActionText}>{selectedText}</p>
@@ -161,16 +184,16 @@ export const ActionConfigSidebar: React.FC<ActionConfigSidebarProps> = ({
                 {ACTION_OPTIONS.map((option, index) => (
                   <motion.button
                     key={option.id}
-                    className={`${styles.option} ${option.isDisabled ? styles.disabled : ''}`}
+                    className={`${styles.option} ${option.isDisabled || selectedText ? styles.disabled : ''}`}
                     onClick={() => handleOptionClick(option)}
-                    disabled={option.isDisabled}
+                    disabled={Boolean(option.isDisabled || selectedText)}
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: 0.1 + index * 0.1 }}
-                    whileHover={!option.isDisabled ? { y: -2, transition: { duration: 0.2 } } : {}}
-                    whileTap={!option.isDisabled ? { y: -1 } : {}}
+                    whileHover={!option.isDisabled && !selectedText ? { y: -2, transition: { duration: 0.2 } } : {}}
+                    whileTap={!option.isDisabled && !selectedText ? { y: -1 } : {}}
                     role="button"
-                    aria-disabled={option.isDisabled}
+                    aria-disabled={Boolean(option.isDisabled || selectedText)}
                   >
                     <div className={styles.optionContent}>
                       <div className={styles.optionInfo}>
@@ -180,9 +203,9 @@ export const ActionConfigSidebar: React.FC<ActionConfigSidebarProps> = ({
                           <span className={styles.optionDescription}>{option.description}</span>
                         </div>
                       </div>
-                      {option.isDisabled && (
+                      {(option.isDisabled || selectedText) && (
                         <span className={styles.comingSoon} aria-label="Coming Soon">
-                          Coming Soon
+                          {option.isDisabled ? 'Coming Soon' : 'Unavailable'}
                         </span>
                       )}
                     </div>
@@ -198,6 +221,7 @@ export const ActionConfigSidebar: React.FC<ActionConfigSidebarProps> = ({
         isOpen={isTextModalOpen}
         onClose={() => setIsTextModalOpen(false)}
         onSave={handleTextSave}
+        initialText={selectedText || ''}
       />
     </>
   )

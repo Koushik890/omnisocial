@@ -65,12 +65,6 @@ const getTriggerDetails = (type: string): TriggerDetails | undefined => {
   return TRIGGER_DETAILS[type]
 }
 
-const nodeTypes: NodeTypes = {
-  trigger: TriggerNode,
-  action: ActionNode,
-  placeholder: PlaceholderNode
-}
-
 // Pro options to remove watermark
 const proOptions = { hideAttribution: true }
 
@@ -214,42 +208,56 @@ const FlowBuilder: React.FC<FlowBuilderProps> = ({ id }) => {
   }, [])
 
   // Handle action removal
-  const handleActionRemove = React.useCallback((actionId: string) => {
-    // Remove action node and its edges
-    setNodes(nds => {
-      const filteredNodes = nds.filter(n => n.id !== actionId)
-      // Add placeholder node if no actions left
-      return [...filteredNodes, {
-        id: 'placeholder-1',
-        type: 'placeholder',
-        position: { x: 600, y: 190 },
-        data: { 
-          label: 'Add Action',
-          onActionSelect: handleActionSelect
-        }
-      }]
-    })
-    
-    setEdges(eds => {
-      const filteredEdges = eds.filter(e => e.target !== actionId)
-      // Always add edge to placeholder when removing action
-      return [...filteredEdges, {
-        id: 'edge-placeholder',
-        source: 'trigger-1',
-        target: 'placeholder-1',
-        type: 'smoothstep',
-        animated: true,
-        style: { stroke: '#94a3b8', strokeWidth: 2 }
-      }]
-    })
-    
-    // Remove from selected actions
-    setSelectedActions([])
-    actionNodeStateRef.current = null
-  }, [setNodes, setEdges])
+  const handleActionRemove = React.useCallback(async (actionId: string) => {
+    try {
+      console.log('Removing action:', actionId)
+      
+      // Remove action node and its edges
+      setNodes(nds => {
+        const filteredNodes = nds.filter(n => n.id !== actionId)
+        // Add placeholder node if no actions left
+        return [...filteredNodes, {
+          id: 'placeholder-1',
+          type: 'placeholder',
+          position: { x: 600, y: 190 },
+          data: { 
+            label: 'Add Action',
+            onActionSelect: handleActionSelect
+          }
+        }]
+      })
+      
+      setEdges(eds => {
+        const filteredEdges = eds.filter(e => e.target !== actionId)
+        // Always add edge to placeholder when removing action
+        return [...filteredEdges, {
+          id: 'edge-placeholder',
+          source: 'trigger-1',
+          target: 'placeholder-1',
+          type: 'smoothstep',
+          animated: true,
+          style: { stroke: '#94a3b8', strokeWidth: 2 }
+        }]
+      })
+      
+      // Remove from selected actions
+      setSelectedActions([])
+      actionNodeStateRef.current = null
+
+      // Save changes to remove the listener from the database
+      await saveChanges({
+        listener: null as any // Using type assertion to handle the deletion case
+      })
+
+      toast.success('Action removed successfully')
+    } catch (error) {
+      console.error('Error removing action:', error)
+      toast.error('Failed to remove action')
+    }
+  }, [setNodes, setEdges, saveChanges])
 
   // Handle action selection from modal
-  const handleActionSelect = React.useCallback((actionId: string, actionType: 'MESSAGE' | 'OMNIAI', actionName: string, icon: React.ComponentType<any>) => {
+  const handleActionSelect = React.useCallback((actionId: string, actionType: 'MESSAGE' | 'OMNIAI', actionName: string, icon: React.ComponentType<any>, config?: any) => {
     // Check if there's already an action node
     if (nodes.some(n => n.type === 'action') && selectedActions.length > 0) {
       toast.error('Please remove the current action before adding a new one.')
@@ -257,7 +265,7 @@ const FlowBuilder: React.FC<FlowBuilderProps> = ({ id }) => {
       return
     }
 
-    // Create new action node
+    // Create new action node with correct structure
     const actionNode: Node = {
       id: actionId,
       type: 'action',
@@ -267,6 +275,7 @@ const FlowBuilder: React.FC<FlowBuilderProps> = ({ id }) => {
         listener: {
           listener: actionType,
           prompt: '',
+          message: config?.message || '',
           commentReply: null,
           dmCount: 0,
           commentCount: 0
@@ -297,9 +306,81 @@ const FlowBuilder: React.FC<FlowBuilderProps> = ({ id }) => {
     setIsTriggerConfigOpen(true)
     actionNodeStateRef.current = actionNode
     
+    // Save the action type to the database with correct structure
+    saveChanges({
+      listener: {
+        type: actionType,
+        status: config?.message ? 'CONFIGURED' : 'UNCONFIGURED',
+        prompt: '',
+        message: config?.message || '',
+        commentReply: null,
+        dmCount: 0,
+        commentCount: 0
+      }
+    })
+    
     // Close the action modal
     setIsActionModalOpen(false)
-  }, [nodes, selectedActions, setNodes, setEdges])
+  }, [nodes, selectedActions, setNodes, setEdges, saveChanges])
+
+  // Add a new function to handle message updates
+  const handleMessageUpdate = React.useCallback((actionId: string, message: string) => {
+    // Update the node data
+    setNodes(nds => nds.map(node => {
+      if (node.id === actionId) {
+        return {
+          ...node,
+          data: {
+            ...node.data,
+            listener: {
+              ...node.data.listener,
+              message
+            }
+          }
+        }
+      }
+      return node
+    }))
+
+    // Save the updated message to the database
+    saveChanges({
+      listener: {
+        type: 'MESSAGE',
+        status: 'CONFIGURED',
+        message
+      }
+    })
+  }, [setNodes, saveChanges])
+
+  // Add a new function to handle prompt updates
+  const handlePromptUpdate = React.useCallback((actionId: string, prompt: string) => {
+    // Update nodes with new prompt
+    setNodes(nds => nds.map(node => {
+      if (node.id === actionId) {
+        return {
+          ...node,
+          data: {
+            ...node.data,
+            listener: {
+              ...node.data.listener,
+              prompt,
+              status: 'CONFIGURED'
+            }
+          }
+        }
+      }
+      return node
+    }))
+
+    // Save changes to the database
+    saveChanges({
+      listener: {
+        type: 'OMNIAI',
+        status: 'CONFIGURED',
+        prompt
+      }
+    })
+  }, [setNodes, saveChanges])
 
   // Initialize flow with data
   React.useEffect(() => {
@@ -334,7 +415,6 @@ const FlowBuilder: React.FC<FlowBuilderProps> = ({ id }) => {
             name: triggerDetails.name,
             icon: triggerDetails.icon
           }])
-          // Remove automatic configuration opening
           setSelectedTriggerForConfig(null)
           setIsTriggerConfigurationOpen(false)
         }
@@ -369,8 +449,49 @@ const FlowBuilder: React.FC<FlowBuilderProps> = ({ id }) => {
       }
       initialNodes.push(triggerNode)
 
-      // Add placeholder node if no action exists
-      if (!automationData.listener) {
+      // Handle action node initialization
+      if (automationData.listener) {
+        console.log('Initializing action from data:', automationData.listener)
+        
+        // Create action node
+        const actionNode = {
+          id: 'action-1',
+          type: 'action',
+          position: { x: triggerNode.position.x + 600, y: 190 },
+          data: {
+            id: 'action-1',
+            listener: {
+              listener: automationData.listener.type, // Use the correct field from database
+              prompt: automationData.listener.prompt || '',
+              message: automationData.listener.message || '',
+              commentReply: automationData.listener.commentReply,
+              dmCount: automationData.listener.dmCount,
+              commentCount: automationData.listener.commentCount
+            }
+          }
+        }
+        initialNodes.push(actionNode)
+        actionNodeStateRef.current = actionNode
+
+        // Set selected action
+        const actionIcon = automationData.listener.type === 'MESSAGE' ? MessageSquare : Bot
+        setSelectedActions([{
+          id: 'action-1',
+          name: automationData.listener.type === 'MESSAGE' ? 'Send Message' : 'AI Assistant',
+          icon: actionIcon
+        }])
+
+        // Add edge
+        initialEdges.push({
+          id: 'edge-1',
+          source: 'trigger-1',
+          target: 'action-1',
+          type: 'smoothstep',
+          animated: true,
+          style: { stroke: '#94a3b8', strokeWidth: 2 }
+        })
+      } else {
+        // Add placeholder if no action exists
         const placeholderNode: Node = {
           id: 'placeholder-1',
           type: 'placeholder',
@@ -382,32 +503,10 @@ const FlowBuilder: React.FC<FlowBuilderProps> = ({ id }) => {
         }
         initialNodes.push(placeholderNode)
 
-        // Add edge between trigger and placeholder
         initialEdges.push({
           id: 'edge-placeholder',
           source: 'trigger-1',
           target: 'placeholder-1',
-          type: 'smoothstep',
-          animated: true,
-          style: { stroke: '#94a3b8', strokeWidth: 2 }
-        })
-      } else {
-        // Add existing action node and edge
-        const actionNode = {
-          id: 'action-1',
-          type: 'action',
-          position: { x: triggerNode.position.x + 600, y: 190 },
-          data: {
-            listener: automationData.listener
-          }
-        }
-        initialNodes.push(actionNode)
-        actionNodeStateRef.current = actionNode
-
-        initialEdges.push({
-          id: 'edge-1',
-          source: 'trigger-1',
-          target: 'action-1',
           type: 'smoothstep',
           animated: true,
           style: { stroke: '#94a3b8', strokeWidth: 2 }
@@ -703,6 +802,18 @@ const FlowBuilder: React.FC<FlowBuilderProps> = ({ id }) => {
       }]
     })
   }, [nodes, saveChanges, setNodes])
+
+  const nodeTypes = React.useMemo(() => ({
+    trigger: TriggerNode,
+    action: (props: any) => (
+      <ActionNode 
+        {...props} 
+        onMessageUpdate={handleMessageUpdate}
+        onPromptUpdate={handlePromptUpdate}
+      />
+    ),
+    placeholder: PlaceholderNode
+  }), [handleMessageUpdate, handlePromptUpdate])
 
   return (
     <div className="absolute inset-0">

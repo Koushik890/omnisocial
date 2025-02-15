@@ -174,6 +174,32 @@ interface AutomationState {
   active?: boolean;
 }
 
+interface AutomationChanges {
+  name?: string
+  active?: boolean
+  keywords?: string[]
+  posts?: any[]
+  trigger?: {
+    type: string
+    config?: {
+      status?: string
+      type?: string
+      keywords?: { include: string[] }
+      replyMessages?: string[]
+      posts?: any[]
+    }
+  }[]
+  listener?: {
+    type: 'MESSAGE' | 'OMNIAI'
+    status?: 'UNCONFIGURED' | 'CONFIGURED' | 'COMPLETED'
+    prompt?: string
+    message?: string
+    commentReply?: string | null
+    dmCount?: number
+    commentCount?: number
+  }
+}
+
 // Add this hook to handle auto-saving
 export const useAutomationSync = (id: string) => {
   const [isSaving, setIsSaving] = useState(false)
@@ -182,84 +208,45 @@ export const useAutomationSync = (id: string) => {
   const queryClient = useQueryClient()
   const { data: automationData } = useQueryAutomation(id)
 
-  const saveToDatabase = async (state: Partial<AutomationState>) => {
+  const saveChanges = useCallback(async (changes: AutomationChanges) => {
     try {
-      setIsSaving(true)
-      
-      // Save each part of the state
-      const promises = []
-      
-      if (state.trigger !== undefined) {
-        if (state.trigger.length === 0) {
-          promises.push(removeTrigger(id))
-        } else {
-          const triggerPromises = state.trigger.map(trigger => {
-            return saveTrigger(id, [trigger.type], trigger.config || undefined)
-          })
-          promises.push(Promise.all(triggerPromises))
-        }
-      }
-      
-      if (state.listener) {
-        promises.push(saveListener(
-          id,
-          state.listener.type,
-          state.listener.prompt || '',
-          state.listener.reply || ''
-        ))
-      }
-      
-      if (state.keywords) {
-        promises.push(Promise.all(
-          state.keywords.map(keyword => saveKeyword(id, keyword))
-        ))
-      }
-      
-      if (state.posts) {
-        promises.push(savePosts(id, state.posts))
-      }
-      
-      if (state.name) {
-        promises.push(updateAutomationName(id, { name: state.name }))
+      const response = await fetch(`/api/automations/${id}`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(changes),
+      })
+
+      if (!response.ok) {
+        throw new Error('Failed to save changes')
       }
 
-      await Promise.all(promises)
-      
-      // Update cache and show success
-      queryClient.invalidateQueries({ queryKey: ['automation-info', id] })
-      setLastSaved(new Date())
+      return await response.json()
     } catch (error) {
-      console.error('Error saving automation:', error)
-      toast.error('Failed to save changes')
+      console.error('Error saving changes:', error)
       throw error
-    } finally {
-      setIsSaving(false)
     }
-  }
+  }, [id])
 
-  const debouncedSave = useCallback((state: Partial<AutomationState>) => {
+  const debouncedSave = useCallback((state: AutomationChanges) => {
     if (saveTimeoutRef.current) {
       clearTimeout(saveTimeoutRef.current)
     }
 
     saveTimeoutRef.current = setTimeout(() => {
-      saveToDatabase(state)
+      saveChanges(state)
     }, 1000) // Debounce for 1 second
-  }, [])
+  }, [saveChanges])
 
   // Initialize automation with default state if it's new
   useEffect(() => {
-    if (automationData?.data && !automationData.data.name) {
+    if (!automationData?.data) {
       debouncedSave({
         name: 'Untitled',
         active: false,
         trigger: [],
-        keywords: [],
-        listener: {
-          type: 'MESSAGE',
-          prompt: '',
-          reply: ''
-        }
+        listener: undefined
       })
     }
   }, [automationData?.data, debouncedSave])
@@ -558,179 +545,39 @@ export const useAutomationPosts = (id: string) => {
 }
 
 export const useAutomationWorkflow = (id: string) => {
-  const [selectedTriggers, setSelectedTriggers] = useState<string[]>([])
-  const [selectedAction, setSelectedAction] = useState<string | null>(null)
-  const [actionConfig, setActionConfig] = useState<{
-    message?: string
-    prompt?: string
-    reply?: string
-  }>({})
-  const [triggerConfig, setTriggerConfig] = useState<Record<string, any>>({})
-  
   const queryClient = useQueryClient()
-  const { data: userData } = useQueryUser()
+  const [isSaving, setIsSaving] = useState(false)
+  const [lastSaved, setLastSaved] = useState<Date | null>(null)
+  const saveTimeoutRef = useRef<NodeJS.Timeout>()
   const { data: automationData } = useQueryAutomation(id)
-  const isPro = userData?.data?.subscription?.plan === SUBSCRIPTION_PLAN.PRO
   const { saveChanges } = useAutomationSync(id)
 
-  // Initialize trigger configuration from database
+  const debouncedSave = useCallback((state: AutomationChanges) => {
+    if (saveTimeoutRef.current) {
+      clearTimeout(saveTimeoutRef.current)
+    }
+
+    saveTimeoutRef.current = setTimeout(() => {
+      saveChanges(state)
+    }, 1000) // Debounce for 1 second
+  }, [saveChanges])
+
+  // Initialize automation with default state if it's new
   useEffect(() => {
-    if (automationData?.data?.trigger && automationData.data.trigger.length > 0) {
-      const trigger = automationData.data.trigger[0]
-      
-      // Map API type to UI type
-      let uiType = trigger.type === 'user-message' ? 'DM' :
-                  trigger.type === 'post-comments' ? 'COMMENT' :
-                  trigger.type // Keep as is if already UI type
-
-      // Create configuration object with all saved data
-      const config = {
-        status: trigger.status || 'unconfigured',
-        type: (trigger as any).config?.type || 'all',
-        keywords: {
-          include: trigger.keywords?.map(k => k.word) || []
-        },
-        replyMessages: trigger.replyMessages?.map(r => r.message) || [],
-        posts: trigger.posts?.map(p => ({
-          postId: p.postId,
-          mediaType: p.mediaType.toString(),
-          mediaUrl: p.mediaUrl,
-          caption: p.caption || undefined
-        })) || []
-      }
-
-      // Update both selectedTriggers and triggerConfig states
-      setSelectedTriggers([uiType])
-      setTriggerConfig({
-        [uiType]: config
+    if (!automationData?.data) {
+      debouncedSave({
+        name: 'Untitled',
+        active: false,
+        trigger: [],
+        listener: undefined
       })
     }
-  }, [automationData?.data])
-
-  const handleTriggerSelect = useCallback(async (type: string, config?: any) => {
-    setSelectedTriggers(prev => {
-      const newTriggers = prev.includes(type) 
-        ? prev.filter(t => t !== type)
-        : [...prev, type]
-      
-      // Save changes immediately when triggers are updated
-      const save = async () => {
-        await saveChanges({
-        trigger: newTriggers.map(t => ({
-          type: t,
-          config: t === type ? config : triggerConfig[t]
-        }))
-      })
-        // Invalidate queries to refetch fresh data
-        queryClient.invalidateQueries({ queryKey: ['automation-info', id] })
-      }
-      
-      save()
-      return newTriggers
-    })
-
-    if (config) {
-      setTriggerConfig(prev => ({
-        ...prev,
-        [type]: config
-      }))
-    }
-  }, [saveChanges, triggerConfig, queryClient, id])
-
-  const handleTriggerConfig = useCallback(async (type: string, config: any) => {
-    setTriggerConfig(prev => ({
-      ...prev,
-      [type]: config
-    }))
-
-    await saveChanges({
-      trigger: selectedTriggers.map(t => ({
-        type: t,
-        config: t === type ? config : triggerConfig[t]
-      }))
-    })
-    // Invalidate queries to refetch fresh data
-    queryClient.invalidateQueries({ queryKey: ['automation-info', id] })
-  }, [saveChanges, selectedTriggers, triggerConfig, queryClient, id])
-
-  const handleActionSelect = useCallback((type: string) => {
-    setSelectedAction(type)
-  }, [])
-
-  const handleActionConfig = useCallback((config: typeof actionConfig) => {
-    setActionConfig(config)
-  }, [])
-
-  const { mutate: saveTrigger, isPending: isSavingTrigger } = useMutationData(
-    ['save-trigger'],
-    async () => {
-      const response = await fetch('/api/automations/trigger', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          automationId: id,
-          triggers: selectedTriggers,
-        }),
-      })
-      return response.json()
-    },
-    'automation-info'
-  )
-
-  const { mutate: saveAction, isPending: isSavingAction } = useMutationData(
-    ['save-action'],
-    async () => {
-      const response = await fetch('/api/automations/action', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          automationId: id,
-          action: selectedAction,
-          config: actionConfig,
-        }),
-      })
-      return response.json()
-    },
-    'automation-info'
-  )
-
-  const handleSaveTrigger = useCallback(() => {
-    if (selectedTriggers.length > 0) {
-      saveTrigger({
-        automationId: id,
-        triggers: selectedTriggers
-      })
-    }
-  }, [selectedTriggers, saveTrigger, id])
-
-  const handleSaveAction = useCallback(() => {
-    if (selectedAction && Object.keys(actionConfig).length > 0) {
-      saveAction({
-        automationId: id,
-        action: selectedAction,
-        config: actionConfig
-      })
-    }
-  }, [selectedAction, actionConfig, saveAction, id])
+  }, [automationData?.data, debouncedSave])
 
   return {
-    selectedTriggers,
-    selectedAction,
-    actionConfig,
-    triggerConfig,
-    isPro,
-    isSavingTrigger,
-    isSavingAction,
-    handleTriggerSelect,
-    handleTriggerConfig,
-    handleActionSelect,
-    handleActionConfig,
-    handleSaveTrigger,
-    handleSaveAction,
+    isSaving,
+    lastSaved,
+    saveChanges: debouncedSave
   }
 }
 
@@ -741,16 +588,17 @@ export const useListener = (id: string) => {
 
   const promptSchema = z.object({
     prompt: z.string().min(1),
-    reply: z.string(),
+    message: z.string(),
   })
 
-  const onFormSubmit = useCallback((data: { prompt: string; reply: string }) => {
+  const onFormSubmit = useCallback((data: { prompt: string; message: string }) => {
     if (listener) {
       saveChanges({
         listener: {
           type: listener,
+          status: 'CONFIGURED',
           prompt: data.prompt,
-          reply: data.reply
+          message: data.message
         }
       })
     }

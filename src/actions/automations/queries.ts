@@ -224,7 +224,7 @@ export const updateAutomation = async (
 
 export const addListener = async (
   automationId: string,
-  listener: 'OMNIAI' | 'MESSAGE',
+  actionType: 'OMNIAI' | 'MESSAGE',
   prompt: string,
   reply?: string
 ) => {
@@ -235,9 +235,13 @@ export const addListener = async (
     data: {
       listener: {
         create: {
-          listener,
-          prompt,
-          commentReply: reply,
+          type: actionType,
+          status: 'UNCONFIGURED',
+          prompt: prompt || '',
+          message: '',
+          commentReply: reply || null,
+          dmCount: 0,
+          commentCount: 0
         },
       },
     },
