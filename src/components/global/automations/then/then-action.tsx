@@ -1,5 +1,6 @@
+'use client'
 import { useListener } from '@/hooks/use-automations'
-import React from 'react'
+import React, { useState } from 'react'
 import TriggerButton from '../trigger-button'
 import { AUTOMATION_LISTENERS } from '@/constants/automation'
 import { SubscriptionPlan } from '../../subscription-plan'
@@ -14,13 +15,37 @@ type Props = {
 }
 
 const ThenAction = ({ id }: Props) => {
+    const [isPending, setIsPending] = useState(false)
+    const [formData, setFormData] = useState({
+        prompt: '',
+        reply: ''
+    })
+    
     const {
         onSetListener,
         listener: Listener,
         onFormSubmit,
-        register,
-        isPending,
     } = useListener(id)
+
+    const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+        const { name, value } = e.target
+        setFormData(prev => ({ ...prev, [name]: value }))
+    }
+
+    const handleSubmit = async (e: React.FormEvent) => {
+        e.preventDefault()
+        setIsPending(true)
+        try {
+            await onFormSubmit({ 
+                prompt: formData.prompt, 
+                message: formData.reply 
+            })
+        } catch (error) {
+            console.error('Error submitting form:', error)
+        } finally {
+            setIsPending(false)
+        }
+    }
 
     return (
         <TriggerButton label="Then">
@@ -68,7 +93,7 @@ const ThenAction = ({ id }: Props) => {
                     )
                 )}
                 <form
-                    onSubmit={onFormSubmit}
+                    onSubmit={handleSubmit}
                     className="flex flex-col gap-y-2"
                 >
                     <Textarea
@@ -77,11 +102,15 @@ const ThenAction = ({ id }: Props) => {
                                 ? 'Add a prompt that your omni ai can use...'
                                 : 'Add a message you want send to your customers'
                         }
-                        {...register('prompt')}
+                        name="prompt"
+                        value={formData.prompt}
+                        onChange={handleInputChange}
                         className="bg-background-80 outline-none border-none ring-0 focus:ring-0"
                     />
                     <Input
-                        {...register('reply')}
+                        name="reply"
+                        value={formData.reply}
+                        onChange={handleInputChange}
                         placeholder="Add a reply for comments (Optional)"
                         className="bg-background-80 outline-none border-none ring-0 focus:ring-0"
                     />

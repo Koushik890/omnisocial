@@ -8,6 +8,7 @@ import { MessageIcon } from '@/icons/message-icon'
 import { motion } from 'framer-motion'
 import styles from './trigger-sidebar.module.css'
 import { LucideIcon } from 'lucide-react'
+import { useTriggerSelection } from '@/hooks/use-trigger-selection'
 
 export interface TriggerSidebarProps {
   isOpen: boolean
@@ -16,46 +17,55 @@ export interface TriggerSidebarProps {
   selectedTriggers: Array<{ id: string; name: string; icon: React.ComponentType<any> }>
 }
 
+// Create motion components using motion.create()
+const MotionSheetContent = motion.create(SheetContent)
+const MotionButton = motion.create('button')
+
 const TRIGGER_OPTIONS = [
   {
-    id: 'post-comments',
-    name: 'Post or Reel Comments',
-    description: 'When someone comments on content',
+    id: 'COMMENT',
+    name: 'Post Comments',
+    description: 'When someone comments on your post',
     icon: CommentIcon,
-    isDisabled: false,
+    isDisabled: false
   },
   {
-    id: 'user-message',
-    name: 'Instagram Message',
-    description: 'When someone sends a DM',
+    id: 'DM',
+    name: 'Direct Message',
+    description: 'When someone sends you a DM',
     icon: MessageIcon,
-    isDisabled: false,
+    isDisabled: false
   },
   {
-    id: 'story-replies',
-    name: 'Story Replies',
-    description: 'When someone replies to story',
+    id: 'REPLY',
+    name: 'Comment Reply',
+    description: 'When someone replies to a comment',
     icon: Reply,
-    isDisabled: true,
-  },
+    isDisabled: true
+  }
 ]
-
-const MotionSheetContent = motion.create(SheetContent)
 
 export const TriggerSidebar: React.FC<TriggerSidebarProps> = ({
   isOpen,
   onClose,
   onSelect,
-  selectedTriggers,
+  selectedTriggers
 }) => {
   // Create a memoized version of TRIGGER_OPTIONS with dynamic disabled state
   const dynamicTriggerOptions = React.useMemo(() => {
     return TRIGGER_OPTIONS.map(option => ({
       ...option,
-      // Disable if the option is already disabled or if it's selected
       isDisabled: option.isDisabled || selectedTriggers.some(trigger => trigger.id === option.id)
     }))
   }, [selectedTriggers])
+
+  const { handleTriggerSelect } = useTriggerSelection({
+    onSelect,
+    onError: (error) => {
+      console.error('Failed to select trigger:', error)
+      // You could show a toast notification here
+    }
+  })
 
   return (
     <Sheet open={isOpen} onOpenChange={onClose}>
@@ -95,10 +105,10 @@ export const TriggerSidebar: React.FC<TriggerSidebarProps> = ({
               {dynamicTriggerOptions.map((option, index) => {
                 const isSelected = selectedTriggers.some(trigger => trigger.id === option.id)
                 return (
-                  <motion.button
+                  <MotionButton
                     key={option.id}
                     className={`${styles.option} ${option.isDisabled ? styles.disabled : ''} ${isSelected ? styles.selected : ''}`}
-                    onClick={() => !option.isDisabled && onSelect(option.id, option.name, option.icon)}
+                    onClick={() => !option.isDisabled && handleTriggerSelect(option.id, option.name, option.icon)}
                     disabled={option.isDisabled}
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
@@ -133,7 +143,7 @@ export const TriggerSidebar: React.FC<TriggerSidebarProps> = ({
                         </span>
                       )}
                     </div>
-                  </motion.button>
+                  </MotionButton>
                 )
               })}
             </div>

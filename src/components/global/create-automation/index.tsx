@@ -1,14 +1,40 @@
 'use client';
 
-import { Button } from "@/components/ui/button";
 import { Plus } from "lucide-react";
+import { PulsatingButton } from "@/components/magicui/pulsating-button";
+import { cn } from "@/lib/utils";
 
-const CreateAutomation = () => {
+interface CreateAutomationProps {
+  onClick?: () => void;
+  className?: string;
+  disabled?: boolean;
+}
+
+const CreateAutomation = ({
+  onClick,
+  className,
+  disabled
+}: CreateAutomationProps) => {
   return (
-    <Button variant="outline" className="aspect-square max-sm:p-0">
-      <Plus className="opacity-60 sm:-ms-1 sm:me-2" size={16} strokeWidth={2} aria-hidden="true" />
-      <span className="max-sm:sr-only">Create Automation</span>
-    </Button>
+    <PulsatingButton
+      className={cn(
+        "relative inline-flex items-center justify-center",
+        "bg-white text-violet-600 border border-violet-200",
+        "hover:bg-violet-50 hover:border-violet-300",
+        "w-full sm:w-auto shadow-sm rounded-lg px-4 py-2",
+        "animate-magic-pulse",
+        className
+      )}
+      onClick={onClick}
+      disabled={disabled}
+      pulseColor="rgba(38, 4, 93, 0.61)"
+      duration="2s"
+    >
+      <span className="relative z-10 flex items-center gap-2">
+        <Plus className="h-4 w-4" strokeWidth={1.5} />
+        <span>Create Automation</span>
+      </span>
+    </PulsatingButton>
   );
 };
 

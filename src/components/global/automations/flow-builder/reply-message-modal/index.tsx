@@ -174,34 +174,34 @@ export function ReplyMessageModal({
         className={cn(
           styles.dialogContent,
           'sm:max-w-[520px] p-0 gap-0',
-          'bg-white/80 dark:bg-gray-900/80',
+          'bg-white/80',
           'backdrop-blur-3xl',
-          'border border-white/20 dark:border-gray-800/30',
-          'shadow-[0_8px_60px_-12px_rgba(0,0,0,0.12)] dark:shadow-[0_8px_60px_-12px_rgba(0,0,0,0.4)]',
+          'border border-white/20',
+          'shadow-[0_8px_60px_-12px_rgba(0,0,0,0.12)]',
           'sm:!rounded-[28px]',
           '[&>button]:hidden overflow-hidden',
           '[&_.radix-dialog-content]:!rounded-[28px]',
           '[&_.radix-dialog-overlay]:!rounded-[28px]',
           '[&>div]:!rounded-[28px]',
           '[&>*>*]:!rounded-[28px]',
-          'ring-1 ring-black/[0.03] dark:ring-white/[0.03]'
+          'ring-1 ring-black/[0.03]'
         )}
       >
         <DialogHeader className={cn(
           styles.dialogHeader,
-          "bg-gradient-to-b from-white/40 via-white/20 to-transparent dark:from-gray-800/40 dark:via-gray-800/20 dark:to-transparent",
+          "bg-gradient-to-b from-white/40 via-white/20 to-transparent",
         )}>
           <div className="flex justify-between items-start w-full">
             <div className="flex-1 min-w-0">
-              <DialogTitle className="text-xl font-semibold tracking-tight bg-gradient-to-br from-gray-900 to-gray-600 dark:from-white dark:to-gray-300 bg-clip-text text-transparent pr-2">
+              <DialogTitle className="text-xl font-semibold tracking-tight bg-gradient-to-br from-gray-900 to-gray-600 bg-clip-text text-transparent pr-2">
                 Would you like to set up Public Reply in the feed?
               </DialogTitle>
             </div>
             <DialogClose 
-              className="relative flex-shrink-0 p-2 hover:bg-gray-900/5 dark:hover:bg-white/5 rounded-full transition-all duration-200 hover:scale-105 active:scale-95"
+              className="relative flex-shrink-0 p-2 hover:bg-gray-900/5 rounded-full transition-all duration-200 hover:scale-105 active:scale-95"
               aria-label="Close dialog"
             >
-              <X className="h-4 w-4 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 transition-colors" />
+              <X className="h-4 w-4 text-gray-500 hover:text-gray-700 transition-colors" />
             </DialogClose>
           </div>
         </DialogHeader>
@@ -215,13 +215,13 @@ export function ReplyMessageModal({
             className={cn(
               'group relative flex flex-col gap-4 p-4',
               'cursor-pointer',
-              'bg-white/40 dark:bg-gray-800/40',
-              'hover:bg-white dark:hover:bg-gray-700/40',
-              'border border-white/50 dark:border-gray-700/50',
+              'bg-white/40',
+              'hover:bg-white',
+              'border border-white/50',
               'rounded-[16px]',
-              'hover:shadow-[0_8px_30px_rgba(0,0,0,0.08)] dark:hover:shadow-[0_8px_30px_rgba(0,0,0,0.3)]',
+              'hover:shadow-[0_8px_30px_rgba(0,0,0,0.08)]',
               'hover:-translate-y-[2px]',
-              'hover:border-purple-500/40 dark:hover:border-purple-500/30',
+              'hover:border-purple-500/40',
               'transition-all duration-300 ease-out',
               'motion-safe:animate-in motion-safe:fade-in-50 motion-safe:slide-in-from-bottom-2',
               'motion-reduce:transition-none',
@@ -233,7 +233,7 @@ export function ReplyMessageModal({
             onKeyDown={(e) => e.key === 'Enter' && handleSelectYesSection()}
           >
             <div className="flex justify-between items-start">
-              <h3 className="text-[15px] font-semibold text-gray-900 dark:text-white">
+              <h3 className="text-[15px] font-semibold text-gray-900">
                 Yes, random multiple replies
               </h3>
             </div>
@@ -278,7 +278,10 @@ export function ReplyMessageModal({
                     </div>
                   ) : (
                     <div className={styles.replyContent}>
-                      <p className={styles.replyText}>
+                      <p className={cn(
+                        styles.replyText,
+                        "text-gray-900"
+                      )}>
                         {reply.message}
                       </p>
                       <div className={styles.replyActions}>
@@ -287,7 +290,10 @@ export function ReplyMessageModal({
                             e.stopPropagation()
                             handleEdit(reply.id, reply.message)
                           }}
-                          className={styles.actionIcon}
+                          className={cn(
+                            styles.actionIcon,
+                            "text-gray-500 hover:text-gray-700 bg-white/50 hover:bg-white"
+                          )}
                         >
                           <Pencil className="h-4 w-4" />
                         </button>
@@ -296,7 +302,11 @@ export function ReplyMessageModal({
                             e.stopPropagation()
                             setPredefinedReplies(prev => prev.filter(r => r.id !== reply.id))
                           }}
-                          className={cn(styles.actionIcon, styles.removeIcon)}
+                          className={cn(
+                            styles.actionIcon,
+                            styles.removeIcon,
+                            "text-gray-500 hover:text-gray-700 bg-white/50 hover:bg-white"
+                          )}
                         >
                           <X className="h-4 w-4" />
                         </button>
@@ -357,17 +367,15 @@ export function ReplyMessageModal({
                 </>
               ) : showNewReplyOptions ? (
                 <>
-                  <motion.div
-                    className={styles.newReplyOptions}
-                    initial={{ opacity: 0, y: 10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: -10 }}
-                  >
+                  <div className={cn(
+                    styles.newReplyOptions,
+                    "bg-white/40 border border-white/50"
+                  )}>
                     <Button
                       onClick={handleGenerateWithAI}
                       className={cn(
                         styles.optionButton,
-                        'flex items-center gap-2',
+                        'flex items-center gap-2 bg-white text-gray-900',
                         isGenerating && 'opacity-70 cursor-not-allowed'
                       )}
                       disabled={isGenerating}
@@ -377,12 +385,15 @@ export function ReplyMessageModal({
                     </Button>
                     <Button
                       onClick={handleManualInput}
-                      className={cn(styles.optionButton, 'flex items-center gap-2')}
+                      className={cn(
+                        styles.optionButton,
+                        'flex items-center gap-2 bg-white text-gray-900'
+                      )}
                     >
                       <Type className="h-4 w-4" />
                       Type manually
                     </Button>
-                  </motion.div>
+                  </div>
                 </>
               ) : (
                 <motion.div
@@ -402,13 +413,13 @@ export function ReplyMessageModal({
             className={cn(
               'group relative flex flex-row items-center gap-4 py-3.5 px-4',
               'cursor-pointer',
-              'bg-white/40 dark:bg-gray-800/40',
-              'hover:bg-white dark:hover:bg-gray-700/40',
-              'border border-white/50 dark:border-gray-700/50',
+              'bg-white/40',
+              'hover:bg-white',
+              'border border-white/50',
               'rounded-[16px]',
-              'hover:shadow-[0_8px_30px_rgba(0,0,0,0.08)] dark:hover:shadow-[0_8px_30px_rgba(0,0,0,0.3)]',
+              'hover:shadow-[0_8px_30px_rgba(0,0,0,0.08)]',
               'hover:-translate-y-[2px]',
-              'hover:border-purple-500/40 dark:hover:border-purple-500/30',
+              'hover:border-purple-500/40',
               'transition-all duration-300 ease-out',
               'motion-safe:animate-in motion-safe:fade-in-50 motion-safe:slide-in-from-bottom-2',
               'motion-reduce:transition-none',
@@ -421,7 +432,7 @@ export function ReplyMessageModal({
             onKeyDown={(e) => e.key === 'Enter' && handleSelectNoSection()}
           >
             <div className="flex-1">
-              <h3 className="text-[15px] font-semibold text-gray-900 dark:text-white transition-colors duration-200">
+              <h3 className="text-[15px] font-semibold text-gray-900 transition-colors duration-200">
                 No
               </h3>
             </div>

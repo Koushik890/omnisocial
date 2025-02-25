@@ -204,11 +204,29 @@ export const updateAutomation = async (
         throw new Error('Active must be a boolean');
       }
       data.active = update.active;
+      // Update status based on active state
+      data.status = update.active ? 'PUBLISHED' : 'DRAFT';
     }
 
     const result = await client.automation.update({
       where: { id },
-      data
+      data,
+      include: {
+        trigger: {
+          include: {
+            posts: true,
+            keywords: true,
+            replyMessages: true
+          }
+        },
+        listener: true,
+        User: {
+          select: {
+            subscription: true,
+            integrations: true,
+          },
+        },
+      }
     });
 
     if (!result) {
@@ -226,26 +244,67 @@ export const addListener = async (
   automationId: string,
   actionType: 'OMNIAI' | 'MESSAGE',
   prompt: string,
-  reply?: string
+  message?: string
 ) => {
-  return await client.automation.update({
-    where: {
-      id: automationId,
-    },
-    data: {
-      listener: {
-        create: {
-          type: actionType,
-          status: 'UNCONFIGURED',
-          prompt: prompt || '',
-          message: '',
-          commentReply: reply || null,
-          dmCount: 0,
-          commentCount: 0
+  if (!automationId) {
+    return { status: 400, data: 'Automation ID is required' };
+  }
+
+  if (!actionType) {
+    return { status: 400, data: 'Action type is required' };
+  }
+
+  try {
+    const automation = await client.automation.findUnique({
+      where: { id: automationId },
+    });
+
+    if (!automation) {
+      return { status: 404, data: 'Automation not found' };
+    }
+
+    const result = await client.automation.update({
+      where: {
+        id: automationId,
+      },
+      data: {
+        listener: {
+          upsert: {
+            create: {
+              type: actionType,
+              status: actionType === 'OMNIAI' ? (prompt ? 'CONFIGURED' : 'UNCONFIGURED') : (message ? 'CONFIGURED' : 'UNCONFIGURED'),
+              prompt: prompt || '',
+              message: message || '',
+              commentReply: null,
+              dmCount: 0,
+              commentCount: 0
+            },
+            update: {
+              type: actionType,
+              status: actionType === 'OMNIAI' ? (prompt ? 'CONFIGURED' : 'UNCONFIGURED') : (message ? 'CONFIGURED' : 'UNCONFIGURED'),
+              prompt: prompt || '',
+              message: message || '',
+              commentReply: null,
+              dmCount: 0,
+              commentCount: 0
+            }
+          }
         },
       },
-    },
-  })
+    });
+
+    if (!result) {
+      return { status: 500, data: 'Failed to save listener' };
+    }
+
+    return { status: 200, data: 'Listener saved successfully' };
+  } catch (error) {
+    console.error('Error in addListener:', error);
+    return { 
+      status: 500, 
+      data: error instanceof Error ? error.message : 'Failed to save listener' 
+    };
+  }
 }
 
 export const deleteTrigger = async (automationId: string) => {
@@ -286,12 +345,22 @@ export const addTrigger = async (automationId: string, trigger: string[], config
   }
 
   try {
-    // Delete any existing triggers (this will cascade to related records)
-    await client.trigger.deleteMany({
+    // First check if a trigger already exists for this automation with any type
+    const existingTriggers = await client.trigger.findMany({
       where: {
         automationId
       }
     })
+
+    // If any triggers exist, delete them all first to ensure clean state
+    if (existingTriggers.length > 0) {
+      console.log('Cleaning up existing triggers:', existingTriggers.length)
+      await client.trigger.deleteMany({
+        where: {
+          automationId
+        }
+      })
+    }
 
     // Create new trigger with its configurations
     const result = await client.automation.update({

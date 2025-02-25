@@ -20,6 +20,7 @@ interface ActionNodeProps {
       dmCount: number
       commentCount: number
       message?: string
+      status: 'CONFIGURED' | 'UNCONFIGURED'
     }
   }
   onMessageUpdate?: (actionId: string, message: string) => void
@@ -51,6 +52,7 @@ export const ActionNode: React.FC<ActionNodeProps> = ({ data, onMessageUpdate, o
 
   const handleAiPromptSave = (prompt: string) => {
     data.listener.prompt = prompt
+    data.listener.status = 'CONFIGURED'
     onPromptUpdate?.(data.id, prompt)
   }
 

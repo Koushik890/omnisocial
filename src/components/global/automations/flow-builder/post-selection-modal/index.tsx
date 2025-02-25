@@ -80,37 +80,37 @@ export function PostSelectionModal({ isOpen, onClose, onSelect, selectedPostId }
         className={cn(
           styles.dialogContent,
           'sm:max-w-[520px] p-0 gap-0',
-          'bg-white/80 dark:bg-gray-900/80',
+          'bg-white/80',
           'backdrop-blur-3xl',
-          'border border-white/20 dark:border-gray-800/30',
-          'shadow-[0_8px_60px_-12px_rgba(0,0,0,0.12)] dark:shadow-[0_8px_60px_-12px_rgba(0,0,0,0.4)]',
+          'border border-white/20',
+          'shadow-[0_8px_60px_-12px_rgba(0,0,0,0.12)]',
           'sm:!rounded-[28px]',
           '[&>button]:hidden overflow-hidden',
           '[&_.radix-dialog-content]:!rounded-[28px]',
           '[&_.radix-dialog-overlay]:!rounded-[28px]',
           '[&>div]:!rounded-[28px]',
           '[&>*>*]:!rounded-[28px]',
-          'ring-1 ring-black/[0.03] dark:ring-white/[0.03]'
+          'ring-1 ring-black/[0.03]'
         )}
       >
         <DialogHeader className={cn(
           styles.dialogHeader,
-          "p-6 pb-3 bg-gradient-to-b from-white/40 via-white/20 to-transparent dark:from-gray-800/40 dark:via-gray-800/20 dark:to-transparent",
+          "p-6 pb-3 bg-gradient-to-b from-white/40 via-white/20 to-transparent",
         )}>
           <div className="flex justify-between items-start">
             <div className="flex-1 pr-4">
-              <DialogTitle className="text-xl font-semibold tracking-tight bg-gradient-to-br from-gray-900 to-gray-600 dark:from-white dark:to-gray-300 bg-clip-text text-transparent">
+              <DialogTitle className="text-xl font-semibold tracking-tight bg-gradient-to-br from-gray-900 to-gray-600 bg-clip-text text-transparent">
                 Which Post or Reel do you want to use?
               </DialogTitle>
-              <DialogDescription className="text-[14px] text-gray-600 dark:text-gray-300 mt-1.5 leading-relaxed">
+              <DialogDescription className="text-[14px] text-gray-600 mt-1.5 leading-relaxed">
                 Select the content you want to monitor for this automation
               </DialogDescription>
             </div>
             <DialogClose 
-              className="relative -mr-2 p-2 hover:bg-gray-900/5 dark:hover:bg-white/5 rounded-full transition-all duration-200 hover:scale-105 active:scale-95"
+              className="relative -mr-2 p-2 hover:bg-gray-900/5 rounded-full transition-all duration-200 hover:scale-105 active:scale-95"
               aria-label="Close dialog"
             >
-              <X className="h-4 w-4 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 transition-colors" />
+              <X className="h-4 w-4 text-gray-500 hover:text-gray-700 transition-colors" />
             </DialogClose>
           </div>
         </DialogHeader>
@@ -124,26 +124,26 @@ export function PostSelectionModal({ isOpen, onClose, onSelect, selectedPostId }
             className={cn(
               'group relative flex flex-col gap-4 p-4',
               'cursor-pointer',
-              'bg-white/40 dark:bg-gray-800/40',
-              'hover:bg-white dark:hover:bg-gray-700/40',
-              'border border-white/50 dark:border-gray-700/50',
+              'bg-white/40',
+              'hover:bg-white',
+              'border border-white/50',
               'rounded-[16px]',
-              'hover:shadow-[0_8px_30px_rgba(0,0,0,0.08)] dark:hover:shadow-[0_8px_30px_rgba(0,0,0,0.3)]',
+              'hover:shadow-[0_8px_30px_rgba(0,0,0,0.08)]',
               'hover:-translate-y-[2px]',
-              'hover:border-purple-500/40 dark:hover:border-purple-500/30',
+              'hover:border-purple-500/40',
               'transition-all duration-300 ease-out',
               'motion-safe:animate-in motion-safe:fade-in-50 motion-safe:slide-in-from-bottom-2',
               'motion-reduce:transition-none'
             )}
           >
             <div className="flex justify-between items-start">
-              <h3 className="text-[15px] font-semibold text-gray-900 dark:text-white">
+              <h3 className="text-[15px] font-semibold text-gray-900">
                 Specific Post or Reel
               </h3>
               {postsData?.status === 200 && postsData.data.data.length > 6 && (
                 <Button
                   variant="link"
-                  className="text-[13px] text-purple-600 hover:text-purple-700 dark:text-purple-400 dark:hover:text-purple-300 font-medium p-0 h-auto"
+                  className="text-[13px] text-purple-600 hover:text-purple-700 font-medium p-0 h-auto"
                   onClick={() => {}}
                 >
                   See More
@@ -157,7 +157,7 @@ export function PostSelectionModal({ isOpen, onClose, onSelect, selectedPostId }
                   <Loader state>Loading posts...</Loader>
                 </div>
               ) : error ? (
-                <div className="col-span-3 py-8 text-center text-gray-500 dark:text-gray-400">
+                <div className="col-span-3 py-8 text-center text-gray-500">
                   Failed to load posts. Please try again.
                 </div>
               ) : postsData?.status === 200 && postsData.data.data.length > 0 ? (
@@ -190,7 +190,7 @@ export function PostSelectionModal({ isOpen, onClose, onSelect, selectedPostId }
                       </div>
                     )}
                     {selectedId === post.id && (
-                      <div className="absolute inset-0 bg-purple-500/20 dark:bg-purple-500/30 flex items-center justify-center">
+                      <div className="absolute inset-0 bg-purple-500/20 flex items-center justify-center">
                         <div className="w-8 h-8 rounded-full bg-purple-500 flex items-center justify-center">
                           <svg className="w-4 h-4 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
@@ -201,7 +201,7 @@ export function PostSelectionModal({ isOpen, onClose, onSelect, selectedPostId }
                   </motion.div>
                 ))
               ) : (
-                <div className="col-span-3 py-8 text-center text-gray-500 dark:text-gray-400">
+                <div className="col-span-3 py-8 text-center text-gray-500">
                   No posts found. Create some posts on Instagram first.
                 </div>
               )}
@@ -232,8 +232,8 @@ export function PostSelectionModal({ isOpen, onClose, onSelect, selectedPostId }
             className={cn(
               'group relative flex flex-row items-center gap-4 py-3.5 px-4',
               'cursor-not-allowed opacity-75',
-              'bg-white/40 dark:bg-gray-800/40',
-              'border border-white/50 dark:border-gray-700/50',
+              'bg-white/40',
+              'border border-white/50',
               'rounded-[16px]',
               'transition-all duration-300 ease-out',
               'motion-safe:animate-in motion-safe:fade-in-50 motion-safe:slide-in-from-bottom-2',
@@ -241,10 +241,10 @@ export function PostSelectionModal({ isOpen, onClose, onSelect, selectedPostId }
             )}
           >
             <div className="flex-1">
-              <h3 className="text-[15px] font-semibold text-gray-900 dark:text-white transition-colors duration-200">
+              <h3 className="text-[15px] font-semibold text-gray-900 transition-colors duration-200">
                 All Posts or Reels
               </h3>
-              <p className="text-[13px] text-gray-600 dark:text-gray-400 transition-colors duration-200 mt-0.5">
+              <p className="text-[13px] text-gray-600 transition-colors duration-200 mt-0.5">
                 Monitor all your content automatically
               </p>
             </div>
@@ -256,8 +256,8 @@ export function PostSelectionModal({ isOpen, onClose, onSelect, selectedPostId }
             className={cn(
               'group relative flex flex-row items-center gap-4 py-3.5 px-4',
               'cursor-not-allowed opacity-75',
-              'bg-white/40 dark:bg-gray-800/40',
-              'border border-white/50 dark:border-gray-700/50',
+              'bg-white/40',
+              'border border-white/50',
               'rounded-[16px]',
               'transition-all duration-300 ease-out',
               'motion-safe:animate-in motion-safe:fade-in-50 motion-safe:slide-in-from-bottom-2',
@@ -266,10 +266,10 @@ export function PostSelectionModal({ isOpen, onClose, onSelect, selectedPostId }
             )}
           >
             <div className="flex-1">
-              <h3 className="text-[15px] font-semibold text-gray-900 dark:text-white transition-colors duration-200">
+              <h3 className="text-[15px] font-semibold text-gray-900 transition-colors duration-200">
                 Next Post or Reel
               </h3>
-              <p className="text-[13px] text-gray-600 dark:text-gray-400 transition-colors duration-200 mt-0.5">
+              <p className="text-[13px] text-gray-600 transition-colors duration-200 mt-0.5">
                 Automatically apply to your next upload
               </p>
             </div>

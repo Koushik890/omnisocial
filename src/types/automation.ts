@@ -31,20 +31,57 @@ export interface AutomationReplyMessage {
   triggerId: string;
 }
 
+export type TriggerConfig = {
+  type: 'specific' | 'all' | 'next'
+  postId?: string
+  mediaUrl?: string
+  keywords?: {
+    include: string[]
+  }
+  replyMessages?: string[]
+  status?: TriggerConfigurationStatus
+  posts?: {
+    postId: string
+    mediaType: string
+    mediaUrl: string
+    caption: string | null
+  }[]
+}
+
 export interface TriggerData {
-  id: string;
-  type: string;
-  status: 'unconfigured' | 'partial' | 'complete';
-  automationId: string | null;
-  posts: AutomationPost[];
-  keywords: AutomationKeyword[];
-  replyMessages: AutomationReplyMessage[];
-  config?: TriggerConfig;
+  id: string
+  type: string
+  config?: TriggerConfig
+  automationId: string | null
+  posts?: {
+    id: string
+    caption: string | null
+    postId: string
+    mediaType: string
+    mediaUrl: string
+    triggerId: string
+  }[]
+  keywords?: {
+    id: string
+    triggerId: string
+    word: string
+  }[]
+  replyMessages?: {
+    id: string
+    triggerId: string
+    message: string
+  }[]
 }
 
 export interface AutomationData {
-  id: string;
-  trigger: TriggerData[];
+  id: string
+  name: string
+  description: string | null
+  isActive: boolean
+  createdAt: Date
+  updatedAt: Date
+  userId: string
+  trigger: TriggerData[]
   listener: any;
 }
 
@@ -57,25 +94,6 @@ export interface AutomationAction {
   disabled?: boolean;
   upgradeRequired?: boolean;
   savedText?: string;
-}
-
-export interface TriggerConfig {
-  status: TriggerConfigurationStatus
-  type?: 'specific' | 'all' | 'next'
-  posts?: Array<{
-    postId: string
-    mediaType: string
-    mediaUrl: string
-    caption?: string
-  }>
-  postId?: string
-  mediaType?: string
-  mediaUrl?: string
-  caption?: string
-  keywords?: {
-    include: string[]
-  }
-  replyMessages?: string[]
 }
 
 export type TriggerConfigurationStatus = 'unconfigured' | 'partial' | 'complete'

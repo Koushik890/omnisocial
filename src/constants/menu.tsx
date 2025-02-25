@@ -1,7 +1,4 @@
-import { AutomationDuoToneWhite } from '@/icons/automation-duotone-white';
-import { HomeDuoToneWhite } from '@/icons/home-duo-tone-white';
-import { RocketDuoToneWhite } from '@/icons/rocket-duotone-white';
-import { SettingsDuoToneWhite } from '@/icons/settings-duotone-white';
+import { AutomationDuoToneBlue, HomeDuoToneBlue, RocketDuoToneBlue, SettingsDuoToneWhite } from '@/icons';
 import { v4 as uuid } from 'uuid';
 
 export interface SideBarProps {
@@ -14,17 +11,17 @@ export const SIDEBAR_MENU: SideBarProps[] = [
   {
     id: uuid(),
     label: 'home',
-    icon: <HomeDuoToneWhite />,
+    icon: <HomeDuoToneBlue />,
   },
   {
     id: uuid(),
     label: 'automations',
-    icon: <AutomationDuoToneWhite />,
+    icon: <AutomationDuoToneBlue />,
   },
   {
     id: uuid(),
     label: 'integrations',
-    icon: <RocketDuoToneWhite />,
+    icon: <RocketDuoToneBlue />,
   },
   {
     id: uuid(),

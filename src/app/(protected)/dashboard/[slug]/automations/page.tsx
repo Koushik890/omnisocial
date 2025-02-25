@@ -21,7 +21,6 @@ import {
 } from "@/components/ui/table"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
-import { PulsatingButton } from "@/components/ui/pulsating-button"
 import { Checkbox } from "@/components/ui/checkbox"
 import {
   Tooltip,
@@ -33,6 +32,8 @@ import { useCreateAutomation } from '@/hooks/use-automations'
 import { getAllAutomations, activateAutomation, updateAutomationName, deleteAutomation } from '@/actions/automations'
 import { useRouter, useParams } from 'next/navigation'
 import { toast } from 'sonner'
+import LoaderOne from '@/components/ui/loader-one'
+import CreateAutomation from "@/components/global/create-automation"
 
 interface AutomationData {
   id: string
@@ -119,6 +120,7 @@ export default function AutomationsPage() {
   const [itemsPerPage, setItemsPerPage] = React.useState(3)
   const [automations, setAutomations] = React.useState<Automation[]>([])
   const [isLoading, setIsLoading] = React.useState(true)
+  const [isNavigating, setIsNavigating] = React.useState(false)
   const { isPending: isCreating, mutate: createAutomation } = useCreateAutomation()
 
   // Fetch automations
@@ -146,36 +148,47 @@ export default function AutomationsPage() {
   // Handle automation creation
   const handleCreateAutomation = async () => {
     try {
+      setIsNavigating(true) // Start our custom loading state
       createAutomation({ id: undefined }, {
-        onSuccess: (data: any) => {
+        onSuccess: async (data: any) => {
           // Check if we have a valid automation ID
           const automationId = data?.res?.id;
           if (!automationId) {
+            setIsNavigating(false) // Clear loading state on error
             toast.error('Failed to create automation: No automation ID received');
             return;
           }
 
-          // Add the new automation to the list and navigate
-          const newAutomation: Automation = {
-            id: automationId,
-            name: 'Untitled',
-            runs: 0,
-            status: 'Draft',
-            lastPublished: 'Never',
-            active: false
-          };
-          setAutomations(prev => [newAutomation, ...prev]);
-          
-          // Show success message and navigate
-          toast.success('Automation created successfully');
-          router.push(`/dashboard/${params.slug}/automations/${automationId}`);
+          try {
+            // Navigate to the automation workflow page
+            await router.push(`/dashboard/${params.slug}/automations/${automationId}`);
+            
+            // Update local state only after successful navigation
+            setAutomations(prev => [
+              {
+                id: automationId,
+                name: 'Untitled',
+                runs: 0,
+                status: 'Draft',
+                lastPublished: 'Never',
+                active: false
+              },
+              ...prev
+            ]);
+          } catch (error) {
+            setIsNavigating(false) // Clear loading state on error
+            console.error('Error during navigation:', error);
+            toast.error('Failed to navigate to the new automation');
+          }
         },
         onError: (error: any) => {
+          setIsNavigating(false) // Clear loading state on error
           console.error('Error creating automation:', error);
           toast.error('Failed to create automation: ' + (error.message || 'Network or server error'));
         }
       });
     } catch (error) {
+      setIsNavigating(false) // Clear loading state on error
       console.error('Error in create automation handler:', error);
       toast.error('Failed to create automation: Unexpected error');
     }
@@ -271,115 +284,110 @@ export default function AutomationsPage() {
 
   return (
     <div className="w-full pt-[49px]">
-      <div className="flex-none px-6 py-6">
-        <div className="flex items-center justify-between gap-4">
-          {/* Search and sort controls */}
-          <div className="flex items-center gap-4 flex-1">
-          <div className="w-full sm:w-[320px]">
-            <div className="relative">
-              <Input 
-                type="search"
-                placeholder="Search automations..." 
-                value={searchValue}
-                onChange={(e) => setSearchValue(e.target.value)}
-                className="peer pe-9 ps-9 h-10 bg-white border-gray-200 text-gray-900 placeholder:text-gray-400 focus-visible:ring-primary/30"
-                aria-label="Search automations"
-              />
-              <div className="pointer-events-none absolute inset-y-0 start-0 flex items-center justify-center ps-3 text-gray-400 peer-disabled:opacity-50">
-                  {isLoading ? (
-                  <LoaderCircle
-                    className="animate-spin"
-                    size={16}
-                    strokeWidth={2}
-                    role="status"
-                    aria-label="Loading..."
-                  />
-                ) : (
-                  <Search size={16} strokeWidth={2} aria-hidden="true" />
-                )}
-              </div>
-              <button
-                className="absolute inset-y-0 end-0 flex h-full w-9 items-center justify-center rounded-e-lg text-gray-400 outline-offset-2 transition-colors hover:text-gray-600 focus:z-10 focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary/30 disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-50"
-                aria-label="Press to speak"
-                type="submit"
-              >
-                <Mic size={16} strokeWidth={2} aria-hidden="true" />
-              </button>
+      <div className="flex-none px-6 py-6 relative">
+        {(isCreating || isNavigating) && (
+          <div className="fixed top-0 left-0 w-full h-full bg-background/80 backdrop-blur-sm z-50 flex items-center justify-center">
+            <div className="flex flex-col items-center gap-4">
+              <LoaderOne />
+              <p className="text-gray-400 font-medium">Creating automation...</p>
             </div>
           </div>
+        )}
+        <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between">
+          <div className="flex items-center gap-4 flex-1">
+            <div className="w-full sm:w-[320px]">
+              <div className="relative">
+                <Input 
+                  type="search"
+                  placeholder="Search automations..." 
+                  value={searchValue}
+                  onChange={(e) => setSearchValue(e.target.value)}
+                  className="peer pe-9 ps-9 h-10 bg-white border-gray-200 text-gray-900 placeholder:text-gray-400 focus-visible:ring-primary/30"
+                  aria-label="Search automations"
+                />
+                <div className="pointer-events-none absolute inset-y-0 start-0 flex items-center justify-center ps-3 text-gray-400 peer-disabled:opacity-50">
+                    {isLoading ? (
+                    <LoaderCircle
+                      className="animate-spin"
+                      size={16}
+                      strokeWidth={2}
+                      role="status"
+                      aria-label="Loading..."
+                    />
+                  ) : (
+                    <Search size={16} strokeWidth={2} aria-hidden="true" />
+                  )}
+                </div>
+                <button
+                  className="absolute inset-y-0 end-0 flex h-full w-9 items-center justify-center rounded-e-lg text-gray-400 outline-offset-2 transition-colors hover:text-gray-600 focus:z-10 focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary/30 disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-50"
+                  aria-label="Press to speak"
+                  type="submit"
+                >
+                  <Mic size={16} strokeWidth={2} aria-hidden="true" />
+                </button>
+              </div>
+            </div>
 
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button 
-                variant="outline" 
-                className="w-full sm:w-[234px] h-10 px-3 bg-white border-gray-200 text-gray-500 hover:bg-gray-50 hover:text-gray-900 hover:border-gray-300 gap-1.5 focus-visible:ring-1 focus-visible:ring-primary/30"
-                aria-label="Sort options"
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button
+                  variant="outline"
+                  className="h-10 px-4 bg-white border-gray-200 text-gray-700 hover:bg-gray-50 hover:text-gray-900 hover:border-gray-300 shadow-sm min-w-[120px]"
+                >
+                  <span>Sort by</span>
+                  <ChevronDown className="ml-2 h-4 w-4 text-gray-500/80" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent
+                align="start"
+                className="min-w-[140px] p-1.5 bg-white backdrop-blur-xl border border-gray-200 shadow-[0_0.75rem_1.5rem_rgba(0,0,0,0.1)] rounded-lg"
               >
-                <span className="text-sm">Sorted by</span>
-                <ChevronDown className="h-3.5 w-3.5 text-gray-500/80" />
-                <div className="w-px h-4 mx-1.5 bg-gray-200" />
-                <span className="text-sm font-medium text-gray-900 truncate capitalize whitespace-nowrap">
-                  {sortConfig.key === 'lastPublished' ? 'Last Published' : sortConfig.key}
-                </span>
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent 
-              align="end"
-              alignOffset={0}
-              sideOffset={4}
-              className="w-[234px] p-1.5 bg-white border border-gray-200 shadow-sm rounded-lg"
-            >
-              <DropdownMenuItem 
-                className="flex items-center gap-2.5 px-2.5 py-2 text-sm text-gray-600 data-[highlighted]:bg-gray-100/80 data-[highlighted]:text-gray-900 cursor-pointer rounded-md"
-                onClick={() => handleSort('name')}
-              >
-                <Calendar className="h-4 w-4 text-gray-500 flex-shrink-0" strokeWidth={1.5} />
-                <span className="truncate">Name</span>
-              </DropdownMenuItem>
-              <DropdownMenuItem 
-                className="flex items-center gap-2.5 px-2.5 py-2 text-sm text-gray-600 data-[highlighted]:bg-gray-100/80 data-[highlighted]:text-gray-900 cursor-pointer rounded-md"
-                onClick={() => handleSort('lastPublished')}
-              >
-                <CalendarDays className="h-4 w-4 text-gray-500 flex-shrink-0" strokeWidth={1.5} />
-                <span className="truncate">Last Published</span>
-              </DropdownMenuItem>
-              <DropdownMenuItem 
-                className="flex items-center gap-2.5 px-2.5 py-2 text-sm text-gray-600 data-[highlighted]:bg-gray-100/80 data-[highlighted]:text-gray-900 cursor-pointer rounded-md"
-                onClick={() => handleSort('runs')}
-              >
-                <LoaderCircle className="h-4 w-4 text-gray-500 flex-shrink-0" strokeWidth={1.5} />
-                <span className="truncate">Number of Runs</span>
-              </DropdownMenuItem>
-              <div className="h-px my-1.5 bg-gray-100" />
-              <DropdownMenuItem 
-                className="flex items-center gap-2.5 px-2.5 py-2 text-sm text-gray-600 data-[highlighted]:bg-gray-100/80 data-[highlighted]:text-gray-900 cursor-pointer rounded-md"
-                onClick={() => setSortConfig(c => ({ ...c, direction: 'asc' }))}
-              >
-                <ArrowUpDown className="h-4 w-4 text-gray-500 flex-shrink-0" strokeWidth={1.5} />
-                <span className="truncate">Ascending</span>
-              </DropdownMenuItem>
-              <DropdownMenuItem 
-                className="flex items-center gap-2.5 px-2.5 py-2 text-sm text-gray-600 data-[highlighted]:bg-gray-100/80 data-[highlighted]:text-gray-900 cursor-pointer rounded-md"
-                onClick={() => setSortConfig(c => ({ ...c, direction: 'desc' }))}
-              >
-                <ArrowDownUp className="h-4 w-4 text-gray-500 flex-shrink-0" strokeWidth={1.5} />
-                <span className="truncate">Descending</span>
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
-        </div>
-
-        <PulsatingButton 
-          className="flex-none w-full sm:w-auto bg-white border-gray-200 text-gray-700 hover:bg-gray-50/80 hover:text-gray-900 hover:border-gray-300 shadow-sm"
-          onClick={handleCreateAutomation}
-          pulseColor="rgb(79, 70, 229)"
-        >
-          <div className="flex items-center gap-2">
-            <Plus className="h-4 w-4 text-gray-500" strokeWidth={1.5} />
-            <span>Create Automation</span>
+                <DropdownMenuItem
+                  onClick={() => handleSort('name')}
+                  className="flex items-center gap-2.5 px-2.5 py-2 text-sm text-gray-600 hover:text-gray-900 data-[highlighted]:bg-gray-100 data-[highlighted]:text-gray-900 rounded-md cursor-pointer transition-colors"
+                >
+                  <Calendar className="h-4 w-4 text-gray-500 flex-shrink-0" strokeWidth={1.5} />
+                  <span className="truncate">Name</span>
+                </DropdownMenuItem>
+                <DropdownMenuItem
+                  onClick={() => handleSort('lastPublished')}
+                  className="flex items-center gap-2.5 px-2.5 py-2 text-sm text-gray-600 hover:text-gray-900 data-[highlighted]:bg-gray-100 data-[highlighted]:text-gray-900 rounded-md cursor-pointer transition-colors"
+                >
+                  <CalendarDays className="h-4 w-4 text-gray-500 flex-shrink-0" strokeWidth={1.5} />
+                  <span className="truncate">Last Published</span>
+                </DropdownMenuItem>
+                <DropdownMenuItem
+                  onClick={() => handleSort('runs')}
+                  className="flex items-center gap-2.5 px-2.5 py-2 text-sm text-gray-600 hover:text-gray-900 data-[highlighted]:bg-gray-100 data-[highlighted]:text-gray-900 rounded-md cursor-pointer transition-colors"
+                >
+                  <LoaderCircle className="h-4 w-4 text-gray-500 flex-shrink-0" strokeWidth={1.5} />
+                  <span className="truncate">Number of Runs</span>
+                </DropdownMenuItem>
+                <div className="h-px my-1.5 bg-gray-100" />
+                <DropdownMenuItem
+                  onClick={() => setSortConfig(c => ({ ...c, direction: 'asc' }))}
+                  className="flex items-center gap-2.5 px-2.5 py-2 text-sm text-gray-600 hover:text-gray-900 data-[highlighted]:bg-gray-100 data-[highlighted]:text-gray-900 rounded-md cursor-pointer transition-colors"
+                >
+                  <ArrowUpDown className="h-4 w-4 text-gray-500 flex-shrink-0" strokeWidth={1.5} />
+                  <span className="truncate">Ascending</span>
+                </DropdownMenuItem>
+                <DropdownMenuItem
+                  onClick={() => setSortConfig(c => ({ ...c, direction: 'desc' }))}
+                  className="flex items-center gap-2.5 px-2.5 py-2 text-sm text-gray-600 hover:text-gray-900 data-[highlighted]:bg-gray-100 data-[highlighted]:text-gray-900 rounded-md cursor-pointer transition-colors"
+                >
+                  <ArrowDownUp className="h-4 w-4 text-gray-500 flex-shrink-0" strokeWidth={1.5} />
+                  <span className="truncate">Descending</span>
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
           </div>
-        </PulsatingButton>
-      </div>
+
+          <CreateAutomation 
+            onClick={handleCreateAutomation}
+            disabled={isCreating || isNavigating}
+            className="shadow-lg"
+          />
+        </div>
 
         {/* Bulk Actions */}
         <div className="flex items-center justify-between mt-4">
@@ -670,7 +678,7 @@ export default function AutomationsPage() {
             size="icon"
             onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
             disabled={currentPage === 1}
-            className="h-8 w-8"
+            className="h-8 w-8 text-gray-600 hover:text-gray-900"
           >
             <ChevronLeft className="h-4 w-4" />
                     <span className="sr-only">Previous page</span>
@@ -680,7 +688,7 @@ export default function AutomationsPage() {
             size="icon"
             onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
             disabled={currentPage === totalPages}
-            className="h-8 w-8"
+            className="h-8 w-8 text-gray-600 hover:text-gray-900"
           >
             <ChevronRight className="h-4 w-4" />
                     <span className="sr-only">Next page</span>

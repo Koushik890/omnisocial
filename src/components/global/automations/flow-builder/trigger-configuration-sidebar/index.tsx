@@ -147,20 +147,14 @@ export function TriggerConfigurationSidebar({
       // Then update the configuration with API type
       const config: Partial<TriggerConfig> = {
         type: selection.type,
+        postId: post.id,
+        mediaUrl: post.media_url,
         keywords: keywords,
         replyMessages: replyMessage ? replyMessage.split(' | ') : undefined,
-        posts: [{
-          postId: post.id,
-          mediaType: post.media_type,
-          mediaUrl: post.media_url,
-          caption: post.caption
-        }],
         status: updateConfigurationStatus({
           type: selection.type,
           postId: post.id,
-          mediaType: post.media_type,
           mediaUrl: post.media_url,
-          caption: post.caption,
           keywords: keywords,
           replyMessages: replyMessage ? replyMessage.split(' | ') : undefined
         })
@@ -187,7 +181,6 @@ export function TriggerConfigurationSidebar({
         type: selection.type,
         keywords: keywords,
         replyMessages: replyMessage ? replyMessage.split(' | ') : undefined,
-        posts: [], // Clear posts array when no specific post is selected
         status: updateConfigurationStatus({
           type: selection.type,
           keywords: keywords,
@@ -230,17 +223,13 @@ export function TriggerConfigurationSidebar({
       const config = {
         type: selectedPost ? 'specific' : undefined,
         postId: selectedPost?.id,
-        mediaType: selectedPost?.media_type,
         mediaUrl: selectedPost?.media_url,
-        caption: selectedPost?.caption,
         keywords: newKeywords,
         replyMessages: replyMessage ? replyMessage.split(' | ') : undefined,
         status: updateConfigurationStatus({
           type: selectedPost ? 'specific' : undefined,
           postId: selectedPost?.id,
-          mediaType: selectedPost?.media_type,
           mediaUrl: selectedPost?.media_url,
-          caption: selectedPost?.caption,
           keywords: newKeywords,
           replyMessages: replyMessage ? replyMessage.split(' | ') : undefined
         })
@@ -268,17 +257,13 @@ export function TriggerConfigurationSidebar({
       const config = {
         type: selectedPost ? 'specific' : undefined,
         postId: selectedPost?.id,
-        mediaType: selectedPost?.media_type,
         mediaUrl: selectedPost?.media_url,
-        caption: selectedPost?.caption,
         keywords: keywords,
         replyMessages: messageArray,
         status: updateConfigurationStatus({
           type: selectedPost ? 'specific' : undefined,
           postId: selectedPost?.id,
-          mediaType: selectedPost?.media_type,
           mediaUrl: selectedPost?.media_url,
-          caption: selectedPost?.caption,
           keywords: keywords,
           replyMessages: messageArray
         })
@@ -297,17 +282,13 @@ export function TriggerConfigurationSidebar({
       const config = {
         type: selectedPost ? 'specific' : undefined,
         postId: selectedPost?.id,
-        mediaType: selectedPost?.media_type,
         mediaUrl: selectedPost?.media_url,
-        caption: selectedPost?.caption,
         keywords: updatedKeywords,
         replyMessages: replyMessage ? replyMessage.split(' | ') : undefined,
         status: updateConfigurationStatus({
           type: selectedPost ? 'specific' : undefined,
           postId: selectedPost?.id,
-          mediaType: selectedPost?.media_type,
           mediaUrl: selectedPost?.media_url,
-          caption: selectedPost?.caption,
           keywords: updatedKeywords,
           replyMessages: replyMessage ? replyMessage.split(' | ') : undefined
         })
@@ -316,7 +297,7 @@ export function TriggerConfigurationSidebar({
     }
   }
 
-  const handleTriggerConfig = useCallback(async (type: string, config: any) => {
+  const handleTriggerConfig = useCallback(async (type: string, config: Partial<TriggerConfig>) => {
     if (!selectedTrigger) return;
 
     // Map UI type to API type for consistency
@@ -327,7 +308,7 @@ export function TriggerConfigurationSidebar({
     await saveChanges({
       trigger: [{
         type: apiType,
-        config: config
+        config
       }]
     })
     

@@ -210,34 +210,179 @@ export const useAutomationSync = (id: string) => {
 
   const saveChanges = useCallback(async (changes: AutomationChanges) => {
     try {
-      const response = await fetch(`/api/automations/${id}`, {
-        method: 'PATCH',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(changes),
-      })
+      setIsSaving(true)
+      
+      // If we're trying to save a listener without a trigger, save only the listener
+      if ('listener' in changes && !changes.trigger) {
+        // If listener is undefined or null, we want to remove the listener
+        if (changes.listener === undefined || changes.listener === null) {
+          try {
+            console.log('Attempting to remove listener')
+            
+            // Make a direct PATCH request to remove the listener
+            const response = await fetch(`/api/automations/${id}`, {
+              method: 'PATCH',
+              headers: {
+                'Content-Type': 'application/json',
+              },
+              body: JSON.stringify({ listener: null }),
+            });
 
-      if (!response.ok) {
-        throw new Error('Failed to save changes')
+            const result = await response.json();
+
+            if (!response.ok) {
+              throw new Error(result.message || result.error || 'Failed to remove listener');
+            }
+            
+            // Update last saved timestamp
+            setLastSaved(new Date());
+            
+            // Invalidate queries to refresh data
+            await queryClient.invalidateQueries({ 
+              queryKey: ['automation-info', id],
+              exact: true,
+              refetchType: 'all'
+            });
+            await queryClient.invalidateQueries({ 
+              queryKey: ['user-automations'],
+              exact: true,
+              refetchType: 'all'
+            });
+
+            return { status: 200, data: 'Listener removed successfully' };
+          } catch (error) {
+            console.error('Error removing listener:', error);
+            throw new Error(error instanceof Error ? error.message : 'Failed to remove listener');
+          }
+        }
+
+        try {
+          // Normal listener save logic for non-null listener
+          if (!changes.listener.type) {
+            throw new Error('Listener type is required');
+          }
+
+          const result = await saveListener(
+            id, 
+            changes.listener.type,
+            changes.listener.prompt || '',
+            changes.listener.message || undefined
+          );
+          
+          if (!result) {
+            throw new Error('No response received from server');
+          }
+
+          if (result.status === 401) {
+            throw new Error('Unauthorized - Please check your authentication');
+          }
+
+          if (result.status === 404) {
+            throw new Error('Could not find automation to save listener');
+          }
+
+          if (result.status !== 200) {
+            throw new Error(result.data || 'Failed to save listener');
+          }
+
+          // Update last saved timestamp
+          setLastSaved(new Date())
+          
+          // Invalidate queries to refresh data
+          await queryClient.invalidateQueries({ 
+            queryKey: ['automation-info', id],
+            exact: true,
+            refetchType: 'all'
+          });
+          await queryClient.invalidateQueries({ 
+            queryKey: ['user-automations'],
+            exact: true,
+            refetchType: 'all'
+          });
+
+          return { status: 200, data: 'Listener saved successfully' }
+        } catch (error) {
+          console.error('Error saving listener:', error);
+          throw error;
+        }
       }
 
-      return await response.json()
+      // Handle trigger removal case
+      if (changes.trigger && changes.trigger.length === 0) {
+        // Call saveTrigger with empty array to remove trigger
+        const result = await saveTrigger(id, [], {})
+        
+        if (!result || result.status !== 200) {
+          throw new Error(result?.data || 'Failed to remove trigger')
+        }
+
+        // Update last saved timestamp
+        setLastSaved(new Date())
+        
+        // Invalidate queries to refresh data
+        queryClient.invalidateQueries({ queryKey: ['automation-info', id] })
+        queryClient.invalidateQueries({ queryKey: ['user-automations'] })
+
+        return { status: 200, data: 'Trigger removed successfully' }
+      }
+
+      // Extract trigger type and config from changes
+      const triggerType = changes.trigger?.[0]?.type
+      const triggerConfig = changes.trigger?.[0]?.config
+
+      if (changes.trigger && !triggerType) {
+        throw new Error('No trigger type provided')
+      }
+
+      // If we have trigger changes, save them
+      if (changes.trigger && triggerType) {
+        // Make the actual API call to save trigger configuration
+        const result = await saveTrigger(id, [triggerType], triggerConfig)
+        
+        if (!result || result.status !== 200) {
+          throw new Error(result?.data || 'Failed to save changes')
+        }
+      }
+
+      // Update last saved timestamp
+      setLastSaved(new Date())
+      
+      // Invalidate queries to refresh data
+      queryClient.invalidateQueries({ queryKey: ['automation-info', id] })
+      queryClient.invalidateQueries({ queryKey: ['user-automations'] })
+
+      return { status: 200, data: 'Changes saved successfully' }
     } catch (error) {
       console.error('Error saving changes:', error)
       throw error
+    } finally {
+      setIsSaving(false)
     }
-  }, [id])
+  }, [id, queryClient, automationData])
 
   const debouncedSave = useCallback((state: AutomationChanges) => {
     if (saveTimeoutRef.current) {
       clearTimeout(saveTimeoutRef.current)
     }
 
-    saveTimeoutRef.current = setTimeout(() => {
-      saveChanges(state)
+    saveTimeoutRef.current = setTimeout(async () => {
+      try {
+        await saveChanges(state)
+      } catch (error) {
+        // Error is already handled in saveChanges
+        console.debug('Debounced save error:', error)
+      }
     }, 1000) // Debounce for 1 second
   }, [saveChanges])
+
+  // Cleanup timeout on unmount
+  useEffect(() => {
+    return () => {
+      if (saveTimeoutRef.current) {
+        clearTimeout(saveTimeoutRef.current)
+      }
+    }
+  }, [])
 
   // Initialize automation with default state if it's new
   useEffect(() => {
@@ -251,19 +396,11 @@ export const useAutomationSync = (id: string) => {
     }
   }, [automationData?.data, debouncedSave])
 
-  // Cleanup
-  useEffect(() => {
-    return () => {
-      if (saveTimeoutRef.current) {
-        clearTimeout(saveTimeoutRef.current)
-      }
-    }
-  }, [])
-
   return {
     isSaving,
     lastSaved,
-    saveChanges: debouncedSave
+    saveChanges,
+    debouncedSave
   }
 }
 

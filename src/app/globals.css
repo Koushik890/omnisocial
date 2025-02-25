@@ -56,6 +56,14 @@
     --sidebar-border: var(--sidebar-bg);
     --sidebar-primary: var(--sidebar-bg);
     --sidebar-primary-foreground: var(--sidebar-fg);
+
+    /* Pulsating button variables */
+    --pulse-color: rgba(79, 70, 229, 0.3);
+    --duration: 2s;
+
+    /* Shimmer button variables */
+    --shimmer-color: rgba(255, 255, 255, 0.1);
+    --speed: 2s;
   }
 
   .dark {
@@ -115,13 +123,15 @@
 
 @layer base {
   * {
-    @apply border-border;
+    border-color: hsl(var(--border));
+    outline-color: hsl(var(--ring) / 0.5);
   }
   html {
     font-family: var(--font-family);
   }
   body {
-    @apply bg-background text-foreground;
+    background-color: hsl(var(--background));
+    color: hsl(var(--foreground));
     font-family: var(--font-family);
   }
   h1, h2, h3, h4, h5, h6, p, span, div, button, input, select, textarea {
@@ -131,6 +141,7 @@
 
 .backdrop--blur__safari {
   -webkit-backdrop-filter: blur(5px);
+  backdrop-filter: blur(5px);
 }
 
 /* Firefox */
@@ -208,4 +219,71 @@
   );
   background-size: 100% 100%;
   background-repeat: no-repeat;
+}
+
+@layer utilities {
+  @keyframes magic-pulse {
+    0%, 100% {
+      box-shadow: 0 0 0 0 var(--pulse-color);
+    }
+    50% {
+      box-shadow: 0 0 0 8px rgba(124, 58, 237, 0.15);
+    }
+  }
+
+  .animate-magic-pulse {
+    animation: magic-pulse var(--duration) ease-out infinite;
+  }
+
+  @keyframes shimmer {
+    0% {
+      transform: translateX(-100%);
+    }
+    50% {
+      transform: translateX(100%);
+    }
+    100% {
+      transform: translateX(100%);
+    }
+  }
+
+  .animate-shimmer {
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(
+      90deg,
+      transparent,
+      rgba(255, 255, 255, 0.4),
+      transparent
+    );
+    animation: shimmer 2s linear infinite;
+  }
+
+  @keyframes border-glow {
+    0%, 100% {
+      box-shadow: 0 0 5px var(--shimmer-color),
+                  inset 0 0 5px var(--shimmer-color);
+      border-color: rgba(255, 255, 255, 0.5);
+    }
+    50% {
+      box-shadow: 0 0 20px var(--shimmer-color),
+                  inset 0 0 10px var(--shimmer-color);
+      border-color: rgba(255, 255, 255, 0.8);
+    }
+  }
+
+  .animate-border-glow {
+    animation: border-glow 2s ease-in-out infinite;
+  }
+}
+
+@layer base {
+  * {
+    border-color: hsl(var(--border));
+    outline-color: hsl(var(--ring) / 0.5);
+  }
+  body {
+    background-color: hsl(var(--background));
+    color: hsl(var(--foreground));
+  }
 }

@@ -1,4 +1,4 @@
-import { InstagramDuoToneBlue, SalesForceDuoToneBlue } from "@/icons"
+import { InstagramDuoToneBlue } from "@/icons"
 
 type Props = {
   title: string

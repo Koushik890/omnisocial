@@ -24,6 +24,7 @@ import Link from 'next/link'
 import { cn } from '@/lib/utils'
 import { usePaths } from '@/hooks/user-nav'
 import { useParams } from 'next/navigation'
+import ActivateAutomationButton from '@/components/global/activate-automation-button'
 
 type Props = {
   id: string
@@ -187,13 +188,7 @@ const AutomationsBreadCrumb = ({ id }: Props) => {
           )}>
             {getLastSavedText()}
           </p>
-          <Button 
-            variant="default" 
-            size="sm"
-            className="bg-[#8D4AF3] hover:bg-[#8D4AF3]/90 text-white font-medium"
-          >
-            Activate
-          </Button>
+          <ActivateAutomationButton id={id} />
         </div>
       </div>
     </div>

@@ -25,13 +25,15 @@ import { ActionNode } from './nodes/action-node'
 import { PlaceholderNode } from './nodes/placeholder-node'
 import { AutomationData, TriggerConfig, TriggerConfigurationStatus } from '@/types/automation'
 import { Button } from '@/components/ui/button'
-import { Plus, Undo2, Redo2, MessageSquare, Bot, Instagram } from 'lucide-react'
+import { MessageSquare, Bot, Instagram } from 'lucide-react'
 import { toast } from 'sonner'
 import { FlowConfigSidebar } from './flow-config-sidebar/index'
 import { ActionModal } from './action-modal'
 import { TriggerSidebar } from './trigger-sidebar'
-import { TriggerConfigurationSidebar } from './trigger-configuration-sidebar'
+import { getTriggerConfigComponent } from './trigger-configurations'
 import { useAutomationWorkflow, useAutomationSync } from '@/hooks/use-automations'
+import { useToast } from '@/contexts/toast-context'
+import { useQueryClient } from '@tanstack/react-query'
 
 interface FlowBuilderProps {
   id: string
@@ -73,7 +75,7 @@ const getConfigurationStatus = (config?: TriggerConfig): TriggerConfigurationSta
   if (config.status) return config.status
 
   // Determine status based on config content
-  const hasPost = config.type === 'specific' && config.posts && config.posts.length > 0
+  const hasPost = config.type === 'specific' && !!config.postId && !!config.mediaUrl
   const hasKeywords = (config.keywords?.include ?? []).length > 0
   const hasReplyMessages = (config.replyMessages ?? []).length > 0
 
@@ -84,6 +86,7 @@ const getConfigurationStatus = (config?: TriggerConfig): TriggerConfigurationSta
 
 const FlowBuilder: React.FC<FlowBuilderProps> = ({ id }) => {
   const { data } = useQueryAutomation(id)
+  const { showToast } = useToast()
   const [nodes, setNodes, onNodesChange] = useNodesState([])
   const [edges, setEdges, onEdgesChange] = useEdgesState([])
   const [selectedNode, setSelectedNode] = React.useState<Node | null>(null)
@@ -102,6 +105,7 @@ const FlowBuilder: React.FC<FlowBuilderProps> = ({ id }) => {
   const isInitializedRef = React.useRef(false)
   const { saveChanges } = useAutomationSync(id)
   const [triggerConfig, setTriggerConfig] = React.useState<Record<string, TriggerConfig>>({})
+  const queryClient = useQueryClient()
 
   // Handle trigger selection
   const handleTriggerSelect = React.useCallback((triggerId: string, triggerName: string, icon: React.ComponentType<any>) => {
@@ -110,10 +114,10 @@ const FlowBuilder: React.FC<FlowBuilderProps> = ({ id }) => {
     // Clear previous trigger configuration
     setTriggerConfig({})
     
-    // Set new trigger
-    setSelectedTriggers([newTrigger])
+    // Set new trigger, replacing any existing ones
+    setSelectedTriggers([newTrigger]) // Only allow one trigger at a time
     
-    // Save the trigger selection with fresh configuration state
+    // Save the trigger selection with fresh configuration
     saveChanges({
       trigger: [{
         type: triggerId,
@@ -157,14 +161,23 @@ const FlowBuilder: React.FC<FlowBuilderProps> = ({ id }) => {
 
   // Handle trigger configuration
   const handleTriggerConfigurationOpen = React.useCallback((trigger: { id: string; name: string; icon: React.ComponentType<any> }) => {
-    setSelectedTriggerForConfig(trigger)
+    // Map UI trigger type to API trigger type for configuration
+    const mappedTrigger = {
+      ...trigger,
+      id: trigger.id === 'COMMENT' ? 'post-comments' :
+          trigger.id === 'DM' ? 'user-message' :
+          trigger.id
+    }
+    setSelectedTriggerForConfig(mappedTrigger)
     setIsTriggerConfigurationOpen(true)
   }, [])
 
   // Handle trigger removal
   const handleTriggerRemove = React.useCallback(async (triggerId: string) => {
     try {
-      console.log('Removing trigger:', triggerId)
+      // Show loading toast and prevent page reload
+      showToast('loading', 'Removing trigger configuration')
+      window.addEventListener('beforeunload', preventReload)
       
       // Clear all trigger-related states
       setSelectedTriggers([])
@@ -194,12 +207,30 @@ const FlowBuilder: React.FC<FlowBuilderProps> = ({ id }) => {
         trigger: [] // Empty array to trigger deletion
       })
 
-      toast.success('Trigger removed successfully')
+      // Remove reload prevention and show success toast
+      window.removeEventListener('beforeunload', preventReload)
+      showToast('success', 'Trigger configuration removed')
     } catch (error) {
+      // Remove reload prevention on error
+      window.removeEventListener('beforeunload', preventReload)
       console.error('Error removing trigger:', error)
       toast.error('Failed to remove trigger')
     }
-  }, [saveChanges, setNodes])
+  }, [saveChanges, setNodes, showToast])
+
+  // Add preventReload function
+  const preventReload = React.useCallback((e: BeforeUnloadEvent) => {
+    e.preventDefault()
+    e.returnValue = 'Changes you made may not be saved. Are you sure you want to leave?'
+    return e.returnValue
+  }, [])
+
+  // Cleanup on unmount
+  React.useEffect(() => {
+    return () => {
+      window.removeEventListener('beforeunload', preventReload)
+    }
+  }, [preventReload])
 
   // Handle new trigger button click
   const handleNewTrigger = React.useCallback(() => {
@@ -212,10 +243,22 @@ const FlowBuilder: React.FC<FlowBuilderProps> = ({ id }) => {
     try {
       console.log('Removing action:', actionId)
       
-      // Remove action node and its edges
+      // Show loading toast and prevent page reload
+      showToast('loading', 'Removing action')
+      window.addEventListener('beforeunload', preventReload)
+
+      // First remove the listener from the database
+      const result = await saveChanges({
+        listener: undefined // Use undefined to match the type
+      })
+
+      if (!result || result.status !== 200) {
+        throw new Error(result?.data || 'Failed to remove listener')
+      }
+
+      // After successful database update, update UI state
       setNodes(nds => {
         const filteredNodes = nds.filter(n => n.id !== actionId)
-        // Add placeholder node if no actions left
         return [...filteredNodes, {
           id: 'placeholder-1',
           type: 'placeholder',
@@ -229,7 +272,6 @@ const FlowBuilder: React.FC<FlowBuilderProps> = ({ id }) => {
       
       setEdges(eds => {
         const filteredEdges = eds.filter(e => e.target !== actionId)
-        // Always add edge to placeholder when removing action
         return [...filteredEdges, {
           id: 'edge-placeholder',
           source: 'trigger-1',
@@ -240,88 +282,152 @@ const FlowBuilder: React.FC<FlowBuilderProps> = ({ id }) => {
         }]
       })
       
-      // Remove from selected actions
+      // Clear selected actions and action node state
       setSelectedActions([])
       actionNodeStateRef.current = null
 
-      // Save changes to remove the listener from the database
-      await saveChanges({
-        listener: null as any // Using type assertion to handle the deletion case
+      // Force immediate refetch to ensure UI and database are in sync
+      await queryClient.invalidateQueries({ 
+        queryKey: ['automation-info', id],
+        exact: true,
+        refetchType: 'all'
       })
 
-      toast.success('Action removed successfully')
+      // Remove reload prevention and show success
+      window.removeEventListener('beforeunload', preventReload)
+      showToast('success', 'Action removed successfully')
     } catch (error) {
       console.error('Error removing action:', error)
+      // Remove reload prevention
+      window.removeEventListener('beforeunload', preventReload)
       toast.error('Failed to remove action')
+      // Revert UI changes on error
+      queryClient.invalidateQueries({ queryKey: ['automation-info', id] })
     }
-  }, [setNodes, setEdges, saveChanges])
+  }, [setNodes, setEdges, saveChanges, queryClient, id, showToast])
 
   // Handle action selection from modal
-  const handleActionSelect = React.useCallback((actionId: string, actionType: 'MESSAGE' | 'OMNIAI', actionName: string, icon: React.ComponentType<any>, config?: any) => {
-    // Check if there's already an action node
-    if (nodes.some(n => n.type === 'action') && selectedActions.length > 0) {
-      toast.error('Please remove the current action before adding a new one.')
-      setIsActionModalOpen(false)
-      return
-    }
+  const handleActionSelect = React.useCallback(async (actionId: string, actionType: 'MESSAGE' | 'OMNIAI', actionName: string, icon: React.ComponentType<any>, config?: any) => {
+    try {
+      // First check the database state with proper typing
+      const currentState = await queryClient.getQueryData(['automation-info', id]) as { data?: AutomationData }
+      if (currentState?.data?.listener) {
+        toast.error('Please remove the current action before adding a new one.')
+        setIsActionModalOpen(false)
+        return
+      }
 
-    // Create new action node with correct structure
-    const actionNode: Node = {
-      id: actionId,
-      type: 'action',
-      position: { x: 600, y: 190 },
-      data: {
+      // Show loading toast and prevent page reload
+      showToast('loading', 'Adding new action')
+      window.addEventListener('beforeunload', preventReload)
+
+      // Create new action node with correct structure
+      const actionNode: Node = {
         id: actionId,
+        type: 'action',
+        position: { x: 600, y: 190 },
+        data: {
+          id: actionId,
+          listener: {
+            listener: actionType,
+            prompt: '',
+            message: config?.message || '',
+            commentReply: null,
+            dmCount: 0,
+            commentCount: 0
+          }
+        }
+      }
+
+      // Update nodes and edges
+      setNodes(nds => {
+        const filteredNodes = nds.filter(n => !n.id.startsWith('placeholder'))
+        return [...filteredNodes, actionNode]
+      })
+
+      setEdges(eds => {
+        const newEdge = {
+          id: `edge-${actionId}`,
+          source: 'trigger-1',
+          target: actionId,
+          type: 'smoothstep',
+          animated: true,
+          style: { stroke: '#94a3b8', strokeWidth: 2 }
+        }
+        return [...eds.filter(e => !e.target.startsWith('placeholder')), newEdge]
+      })
+
+      // Update selected actions and show sidebar
+      setSelectedActions([{ id: actionId, name: actionName, icon }])
+      setIsTriggerConfigOpen(true)
+      actionNodeStateRef.current = actionNode
+      
+      // Save the action type to the database with correct structure
+      await saveChanges({
         listener: {
-          listener: actionType,
+          type: actionType,
+          status: config?.message ? 'CONFIGURED' : 'UNCONFIGURED',
           prompt: '',
           message: config?.message || '',
           commentReply: null,
           dmCount: 0,
           commentCount: 0
         }
-      }
+      })
+
+      // Remove reload prevention and show success toast
+      window.removeEventListener('beforeunload', preventReload)
+      showToast('success', 'Action added successfully')
+      
+      // Close the action modal
+      setIsActionModalOpen(false)
+
+      // Force immediate refetch to ensure UI and database are in sync
+      await queryClient.invalidateQueries({ 
+        queryKey: ['automation-info', id],
+        exact: true,
+        refetchType: 'all'
+      })
+    } catch (error) {
+      console.error('Error adding action:', error)
+      
+      // Remove reload prevention
+      window.removeEventListener('beforeunload', preventReload)
+      
+      // Show error toast
+      toast.error('Failed to add action')
+      
+      // Revert UI changes
+      setNodes(nds => {
+        const filteredNodes = nds.filter(n => n.id !== actionId)
+        return [...filteredNodes, {
+          id: 'placeholder-1',
+          type: 'placeholder',
+          position: { x: 600, y: 190 },
+          data: { 
+            label: 'Add Action',
+            onActionSelect: handleActionSelect
+          }
+        }]
+      })
+      
+      setEdges(eds => {
+        const filteredEdges = eds.filter(e => e.target !== actionId)
+        return [...filteredEdges, {
+          id: 'edge-placeholder',
+          source: 'trigger-1',
+          target: 'placeholder-1',
+          type: 'smoothstep',
+          animated: true,
+          style: { stroke: '#94a3b8', strokeWidth: 2 }
+        }]
+      })
+      
+      setSelectedActions([])
+      actionNodeStateRef.current = null
+      setIsActionModalOpen(false)
     }
-
-    // Update nodes and edges
-    setNodes(nds => {
-      const filteredNodes = nds.filter(n => !n.id.startsWith('placeholder'))
-      return [...filteredNodes, actionNode]
-    })
-
-    setEdges(eds => {
-      const newEdge = {
-        id: `edge-${actionId}`,
-        source: 'trigger-1',
-        target: actionId,
-        type: 'smoothstep',
-        animated: true,
-        style: { stroke: '#94a3b8', strokeWidth: 2 }
-      }
-      return [...eds.filter(e => !e.target.startsWith('placeholder')), newEdge]
-    })
-
-    // Update selected actions and show sidebar
-    setSelectedActions([{ id: actionId, name: actionName, icon }])
-    setIsTriggerConfigOpen(true)
-    actionNodeStateRef.current = actionNode
-    
-    // Save the action type to the database with correct structure
-    saveChanges({
-      listener: {
-        type: actionType,
-        status: config?.message ? 'CONFIGURED' : 'UNCONFIGURED',
-        prompt: '',
-        message: config?.message || '',
-        commentReply: null,
-        dmCount: 0,
-        commentCount: 0
-      }
-    })
-    
-    // Close the action modal
-    setIsActionModalOpen(false)
-  }, [nodes, selectedActions, setNodes, setEdges, saveChanges])
+  }, [nodes, selectedActions, setNodes, setEdges, saveChanges, showToast, preventReload, queryClient, id])
 
   // Add a new function to handle message updates
   const handleMessageUpdate = React.useCallback((actionId: string, message: string) => {
@@ -385,11 +491,11 @@ const FlowBuilder: React.FC<FlowBuilderProps> = ({ id }) => {
   // Initialize flow with data
   React.useEffect(() => {
     if (data?.data && !isInitializedRef.current) {
-      const automationData = data.data as AutomationData
+      const automationData = data.data as unknown as Partial<AutomationData>
       const initialNodes: Node[] = []
       const initialEdges: Edge[] = []
 
-      // Initialize selected triggers from saved data without auto-opening configuration
+      // Initialize selected triggers from saved data
       if (automationData.trigger && automationData.trigger.length > 0) {
         const savedTrigger = automationData.trigger[0]
         console.log('Initializing trigger from data:', savedTrigger)
@@ -410,13 +516,21 @@ const FlowBuilder: React.FC<FlowBuilderProps> = ({ id }) => {
         })
 
         if (triggerDetails) {
-          setSelectedTriggers([{
+          const trigger = {
             id: triggerType,
             name: triggerDetails.name,
             icon: triggerDetails.icon
-          }])
-          setSelectedTriggerForConfig(null)
-          setIsTriggerConfigurationOpen(false)
+          }
+          setSelectedTriggers([trigger])
+          
+          // Set the selected trigger for configuration with API type mapping
+          const mappedTrigger = {
+            ...trigger,
+            id: trigger.id === 'COMMENT' ? 'post-comments' :
+                trigger.id === 'DM' ? 'user-message' :
+                trigger.id
+          }
+          setSelectedTriggerForConfig(mappedTrigger)
         }
       }
 
@@ -426,8 +540,8 @@ const FlowBuilder: React.FC<FlowBuilderProps> = ({ id }) => {
         type: 'trigger',
         position: { x: 100, y: 100 },
         data: {
-          type: automationData.trigger.length > 0 ? automationData.trigger[0].type : 'New Trigger',
-          keywords: automationData.trigger.length > 0 ? automationData.trigger[0].keywords : [],
+          type: automationData.trigger?.[0]?.type ?? 'New Trigger',
+          keywords: automationData.trigger?.[0]?.keywords ?? [],
           selectedActions,
           selectedTriggers,
           onTriggerSelect: handleTriggerSelect,
@@ -441,8 +555,8 @@ const FlowBuilder: React.FC<FlowBuilderProps> = ({ id }) => {
           onTriggerSidebarOpen: () => setIsTriggerSidebarOpen(true),
           onTriggerSidebarClose: () => setIsTriggerSidebarOpen(false),
           onTriggerConfigurationOpen: handleTriggerConfigurationOpen,
-          config: automationData.trigger.length > 0 ? automationData.trigger[0].config : undefined,
-          configurationStatus: automationData.trigger.length > 0 
+          config: automationData.trigger?.[0]?.config,
+          configurationStatus: automationData.trigger?.[0]?.config 
             ? getConfigurationStatus(automationData.trigger[0].config as TriggerConfig)
             : 'unconfigured'
         }
@@ -815,6 +929,16 @@ const FlowBuilder: React.FC<FlowBuilderProps> = ({ id }) => {
     placeholder: PlaceholderNode
   }), [handleMessageUpdate, handlePromptUpdate])
 
+  // Replace the TriggerConfigurationSidebar with dynamic component
+  const TriggerConfigComponent = selectedTriggerForConfig 
+    ? getTriggerConfigComponent(selectedTriggerForConfig.id)
+    : null
+
+  // Handle trigger configuration open/close
+  const handleTriggerConfigurationClose = React.useCallback(() => {
+    setIsTriggerConfigurationOpen(false)
+  }, [])
+
   return (
     <div className="absolute inset-0">
       <ReactFlow
@@ -864,61 +988,6 @@ const FlowBuilder: React.FC<FlowBuilderProps> = ({ id }) => {
           maskColor="rgba(240, 240, 240, 0.6)"
           style={{ width: 120, height: 80 }}
         />
-        <Panel position="top-right" className="flex gap-2 mr-4 mt-4">
-          <Button
-            size="icon"
-            variant="secondary"
-            className="h-9 w-9 bg-white shadow-lg hover:bg-gray-100 border-gray-200 ring-1 ring-black/5"
-            onClick={() => {
-              // Add new trigger node
-              const newNode: Node = {
-                id: `trigger-${nodes.length + 1}`,
-                type: 'trigger',
-                position: { x: 100, y: 200 },
-                data: {
-                  type: 'New Trigger',
-                  keywords: [],
-                  selectedActions,
-                  selectedTriggers,
-                  onTriggerSelect: handleTriggerSelect,
-                  onTriggerRemove: handleTriggerRemove,
-                  onActionSelect: handleActionSelect,
-                  onActionRemove: handleActionRemove,
-                  isConfigSidebarOpen: isTriggerConfigOpen,
-                  onConfigSidebarClose: () => setIsTriggerConfigOpen(false),
-                  onConfigSidebarOpen: () => setIsTriggerConfigOpen(true),
-                  isTriggerSidebarOpen,
-                  onTriggerSidebarOpen: () => setIsTriggerSidebarOpen(true),
-                  onTriggerSidebarClose: () => setIsTriggerSidebarOpen(false),
-                  onTriggerConfigurationOpen: handleTriggerConfigurationOpen
-                }
-              }
-              setNodes((nds) => [...nds, newNode])
-            }}
-          >
-            <Plus className="h-5 w-5 text-gray-700" />
-          </Button>
-          <Button
-            size="icon"
-            variant="secondary"
-            className="h-9 w-9 bg-white shadow-lg hover:bg-gray-100 border-gray-200 ring-1 ring-black/5"
-            onClick={() => {
-              // Undo last action
-            }}
-          >
-            <Undo2 className="h-5 w-5 text-gray-700" />
-          </Button>
-          <Button
-            size="icon"
-            variant="secondary"
-            className="h-9 w-9 bg-white shadow-lg hover:bg-gray-100 border-gray-200 ring-1 ring-black/5"
-            onClick={() => {
-              // Redo last action
-            }}
-          >
-            <Redo2 className="h-5 w-5 text-gray-700" />
-          </Button>
-        </Panel>
       </ReactFlow>
 
       {/* Flow Config Sidebar */}
@@ -950,14 +1019,15 @@ const FlowBuilder: React.FC<FlowBuilderProps> = ({ id }) => {
         selectedTriggers={selectedTriggers}
       />
 
-      {/* Trigger Configuration Sidebar */}
-      <TriggerConfigurationSidebar
-        isOpen={isTriggerConfigurationOpen}
-        onClose={() => setIsTriggerConfigurationOpen(false)}
-        selectedTrigger={selectedTriggerForConfig}
-        automationId={id}
-        onTriggerConfig={handleTriggerConfig}
-      />
+      {/* Replace the existing TriggerConfigurationSidebar */}
+      {TriggerConfigComponent && (
+        <TriggerConfigComponent
+          isOpen={isTriggerConfigurationOpen}
+          onClose={handleTriggerConfigurationClose}
+          automationId={id}
+          onTriggerConfig={handleTriggerConfig}
+        />
+      )}
     </div>
   )
 }

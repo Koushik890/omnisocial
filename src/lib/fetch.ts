@@ -60,7 +60,6 @@ export const sendPrivateMessage = async (
   )
 }
 
-
 export const generateTokens = async (code: string) => {
   const insta_form = new FormData()
   insta_form.append('client_id', process.env.INSTAGRAM_CLIENT_ID as string)
@@ -89,5 +88,70 @@ export const generateTokens = async (code: string) => {
     )
 
     return long_token.data
+  }
+}
+
+export const replyToComment = async (
+  commentId: string,
+  message: string,
+  token: string
+): Promise<{ status: number; data?: any }> => {
+  try {
+    // Ensure we have valid inputs
+    if (!commentId || !message || !token) {
+      console.error('Missing required parameters:', { commentId, message, hasToken: !!token })
+      return { status: 400, data: { error: 'Missing required parameters' } }
+    }
+
+    // Use environment variable for base URL
+    const baseUrl = process.env.INSTAGRAM_BASE_URL || 'https://graph.facebook.com'
+    const apiVersion = 'v21.0' // Match the version used in sendDM
+
+    const response = await fetch(
+      `${baseUrl}/${apiVersion}/${commentId}/replies`,
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          message: message
+        }),
+      }
+    )
+
+    const data = await response.json()
+
+    if (!response.ok) {
+      console.error('Error replying to comment:', {
+        status: response.status,
+        data,
+        commentId,
+        tokenLength: token?.length
+      })
+      return { status: response.status, data }
+    }
+
+    console.log('Successfully replied to comment:', {
+      commentId,
+      status: response.status,
+      data
+    })
+
+    return { status: response.status, data }
+  } catch (error) {
+    console.error('Error in replyToComment:', {
+      error: error instanceof Error ? error.message : 'Unknown error',
+      commentId,
+      tokenLength: token?.length
+    })
+    return { 
+      status: 500,
+      data: { 
+        error: 'Internal server error',
+        details: error instanceof Error ? error.message : 'Unknown error'
+      }
+    }
   }
 }

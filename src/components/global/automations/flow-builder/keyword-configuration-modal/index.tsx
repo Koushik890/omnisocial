@@ -84,34 +84,34 @@ export function KeywordConfigurationModal({
         className={cn(
           styles.dialogContent,
           'sm:max-w-[520px] p-0 gap-0',
-          'bg-white/80 dark:bg-gray-900/80',
+          'bg-white/80',
           'backdrop-blur-3xl',
-          'border border-white/20 dark:border-gray-800/30',
-          'shadow-[0_8px_60px_-12px_rgba(0,0,0,0.12)] dark:shadow-[0_8px_60px_-12px_rgba(0,0,0,0.4)]',
+          'border border-white/20',
+          'shadow-[0_8px_60px_-12px_rgba(0,0,0,0.12)]',
           'sm:!rounded-[28px]',
           '[&>button]:hidden overflow-hidden',
           '[&_.radix-dialog-content]:!rounded-[28px]',
           '[&_.radix-dialog-overlay]:!rounded-[28px]',
           '[&>div]:!rounded-[28px]',
           '[&>*>*]:!rounded-[28px]',
-          'ring-1 ring-black/[0.03] dark:ring-white/[0.03]'
+          'ring-1 ring-black/[0.03]'
         )}
       >
         <DialogHeader className={cn(
           styles.dialogHeader,
-          "p-6 pb-3 bg-gradient-to-b from-white/40 via-white/20 to-transparent dark:from-gray-800/40 dark:via-gray-800/20 dark:to-transparent",
+          "p-6 pb-3 bg-gradient-to-b from-white/40 via-white/20 to-transparent",
         )}>
           <div className="flex justify-between items-start">
             <div className="flex-1 pr-4">
-              <DialogTitle className="text-xl font-semibold tracking-tight bg-gradient-to-br from-gray-900 to-gray-600 dark:from-white dark:to-gray-300 bg-clip-text text-transparent">
+              <DialogTitle className="text-xl font-semibold tracking-tight bg-gradient-to-br from-gray-900 to-gray-600 bg-clip-text text-transparent">
                 What will start your DM automation?
               </DialogTitle>
             </div>
             <DialogClose 
-              className="relative -mr-2 p-2 hover:bg-gray-900/5 dark:hover:bg-white/5 rounded-full transition-all duration-200 hover:scale-105 active:scale-95"
+              className="relative -mr-2 p-2 hover:bg-gray-900/5 rounded-full transition-all duration-200 hover:scale-105 active:scale-95"
               aria-label="Close dialog"
             >
-              <X className="h-4 w-4 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 transition-colors" />
+              <X className="h-4 w-4 text-gray-500 hover:text-gray-700 transition-colors" />
             </DialogClose>
           </div>
         </DialogHeader>

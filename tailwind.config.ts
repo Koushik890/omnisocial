@@ -10,8 +10,28 @@ const config: Config = {
   theme: {
   	extend: {
   		fontFamily: {
-  			sans: ['var(--font-raleway)', 'system-ui', '-apple-system', 'BlinkMacSystemFont', 'Segoe UI', 'Roboto', 'Helvetica Neue', 'Arial', 'sans-serif'],
-  			raleway: ['var(--font-raleway)', 'system-ui', '-apple-system', 'BlinkMacSystemFont', 'Segoe UI', 'Roboto', 'Helvetica Neue', 'Arial', 'sans-serif'],
+  			sans: [
+  				'var(--font-raleway)',
+  				'system-ui',
+  				'-apple-system',
+  				'BlinkMacSystemFont',
+  				'Segoe UI',
+  				'Roboto',
+  				'Helvetica Neue',
+  				'Arial',
+  				'sans-serif'
+  			],
+  			raleway: [
+  				'var(--font-raleway)',
+  				'system-ui',
+  				'-apple-system',
+  				'BlinkMacSystemFont',
+  				'Segoe UI',
+  				'Roboto',
+  				'Helvetica Neue',
+  				'Arial',
+  				'sans-serif'
+  			]
   		},
   		colors: {
   			border: 'hsl(var(--border))',
@@ -72,10 +92,25 @@ const config: Config = {
   			sm: 'calc(var(--radius) - 4px)'
   		},
   		animation: {
+  			'spin-around': 'spin-around calc(var(--speed) * 2) infinite linear',
   			pulse: 'pulse var(--duration) ease-out infinite',
-  			rippling: 'rippling var(--duration) ease-out'
+  			'shimmer-slide': 'shimmer-slide var(--speed) ease-in-out infinite alternate'
   		},
   		keyframes: {
+  			'spin-around': {
+  				'0%': {
+  					transform: 'translateZ(0) rotate(0)'
+  				},
+  				'15%, 35%': {
+  					transform: 'translateZ(0) rotate(90deg)'
+  				},
+  				'65%, 85%': {
+  					transform: 'translateZ(0) rotate(270deg)'
+  				},
+  				'100%': {
+  					transform: 'translateZ(0) rotate(360deg)'
+  				}
+  			},
   			pulse: {
   				'0%, 100%': {
   					boxShadow: '0 0 0 0 var(--pulse-color)'
@@ -84,19 +119,15 @@ const config: Config = {
   					boxShadow: '0 0 0 8px var(--pulse-color)'
   				}
   			},
-  			rippling: {
-  				'0%': {
-  					opacity: '1'
-  				},
-  				'100%': {
-  					transform: 'scale(2)',
-  					opacity: '0'
+  			'shimmer-slide': {
+  				to: {
+  					transform: 'translate(calc(100cqw - 100%), 0)'
   				}
   			}
   		}
   	}
   },
   plugins: [],
-};
+} satisfies Config
 
 export default config;

@@ -75,7 +75,7 @@ model Post {
   mediaType MEDIATYPE @default(IMAGE)
   mediaUrl  String
   caption   String?
-  triggerId String    @db.Uuid
+  triggerId String
   trigger   Trigger   @relation(fields: [triggerId], references: [id], onDelete: Cascade)
 
   @@index([triggerId])
@@ -98,22 +98,26 @@ model Listener {
 }
 
 model Trigger {
-  id            String         @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  id            String   @id @default(cuid())
   type          String
-  status        String         @default("unconfigured")
-  automationId  String?        @db.Uuid
-  keywords      Keyword[]
+  status        String   @default("unconfigured")
+  automationId  String?  @db.Uuid
+  automation    Automation? @relation(fields: [automationId], references: [id], onDelete: Cascade)
   posts         Post[]
+  keywords      Keyword[]
   replyMessages ReplyMessage[]
-  Automation    Automation?    @relation(fields: [automationId], references: [id], onDelete: Cascade)
+  config        Json?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
 
+  @@unique([automationId, type])
   @@index([automationId])
 }
 
 model Keyword {
   id        String  @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   word      String
-  triggerId String  @db.Uuid
+  triggerId String
   trigger   Trigger @relation(fields: [triggerId], references: [id], onDelete: Cascade)
 
   @@unique([triggerId, word])
@@ -123,7 +127,7 @@ model Keyword {
 model ReplyMessage {
   id        String  @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   message   String
-  triggerId String  @db.Uuid
+  triggerId String
   trigger   Trigger @relation(fields: [triggerId], references: [id], onDelete: Cascade)
 
   @@index([triggerId])

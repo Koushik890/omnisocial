@@ -139,7 +139,7 @@ export const saveListener = async (
   autmationId: string,
   listener: 'OMNIAI' | 'MESSAGE',
   prompt: string,
-  reply?: string
+  message?: string
 ) => {
   const user = await onCurrentUser()
   if (user.status !== 200 || !user.data) {
@@ -147,10 +147,11 @@ export const saveListener = async (
   }
 
   try {
-    const create = await addListener(autmationId, listener, prompt, reply)
+    const create = await addListener(autmationId, listener, prompt, message)
     if (create) return { status: 200, data: 'Listener created' }
     return { status: 404, data: 'Cant save listener' }
   } catch (error) {
+    console.error('Error saving listener:', error)
     return { status: 500, data: 'Oops! something went wrong' }
   }
 }

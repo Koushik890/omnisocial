@@ -16,6 +16,12 @@ CREATE TYPE "SUBSCRIPTION_STATUS" AS ENUM ('ACTIVE', 'PAST_DUE', 'CANCEL_AT_PERI
 -- CreateEnum
 CREATE TYPE "AutomationStatus" AS ENUM ('DRAFT', 'PUBLISHED', 'ARCHIVED');
 
+-- CreateEnum
+CREATE TYPE "ACTION_TYPE" AS ENUM ('MESSAGE', 'OMNIAI');
+
+-- CreateEnum
+CREATE TYPE "ACTION_STATUS" AS ENUM ('UNCONFIGURED', 'CONFIGURED', 'COMPLETED');
+
 -- CreateTable
 CREATE TABLE "User" (
     "id" UUID NOT NULL DEFAULT gen_random_uuid(),
@@ -63,6 +69,7 @@ CREATE TABLE "Automation" (
     "updatedAt" TIMESTAMP(3) NOT NULL,
     "active" BOOLEAN NOT NULL DEFAULT false,
     "userId" UUID,
+    "config" JSONB,
     "status" "AutomationStatus" NOT NULL DEFAULT 'DRAFT',
 
     CONSTRAINT "Automation_pkey" PRIMARY KEY ("id")
@@ -81,30 +88,7 @@ CREATE TABLE "Dms" (
 );
 
 -- CreateTable
-CREATE TABLE "Listener" (
-    "id" UUID NOT NULL DEFAULT gen_random_uuid(),
-    "automationId" UUID NOT NULL,
-    "listener" "LISTENERS" NOT NULL DEFAULT 'MESSAGE',
-    "prompt" TEXT NOT NULL,
-    "commentReply" TEXT,
-    "dmCount" INTEGER NOT NULL DEFAULT 0,
-    "commentCount" INTEGER NOT NULL DEFAULT 0,
-
-    CONSTRAINT "Listener_pkey" PRIMARY KEY ("id")
-);
-
--- CreateTable
-CREATE TABLE "Trigger" (
-    "id" UUID NOT NULL DEFAULT gen_random_uuid(),
-    "type" TEXT NOT NULL,
-    "automationId" UUID,
-    "status" TEXT DEFAULT 'unconfigured',
-
-    CONSTRAINT "Trigger_pkey" PRIMARY KEY ("id")
-);
-
--- CreateTable
-CREATE TABLE "TriggerPost" (
+CREATE TABLE "Post" (
     "id" UUID NOT NULL DEFAULT gen_random_uuid(),
     "postId" TEXT NOT NULL,
     "mediaType" "MEDIATYPE" NOT NULL DEFAULT 'IMAGE',
@@ -112,25 +96,56 @@ CREATE TABLE "TriggerPost" (
     "caption" TEXT,
     "triggerId" UUID NOT NULL,
 
-    CONSTRAINT "TriggerPost_pkey" PRIMARY KEY ("id")
+    CONSTRAINT "Post_pkey" PRIMARY KEY ("id")
 );
 
 -- CreateTable
-CREATE TABLE "TriggerKeyword" (
+CREATE TABLE "Listener" (
+    "id" UUID NOT NULL DEFAULT gen_random_uuid(),
+    "automationId" UUID NOT NULL,
+    "type" "ACTION_TYPE" NOT NULL DEFAULT 'MESSAGE',
+    "status" "ACTION_STATUS" NOT NULL DEFAULT 'UNCONFIGURED',
+    "prompt" TEXT,
+    "message" TEXT,
+    "commentReply" TEXT,
+    "dmCount" INTEGER NOT NULL DEFAULT 0,
+    "commentCount" INTEGER NOT NULL DEFAULT 0,
+    "metadata" JSONB,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP(3) NOT NULL,
+
+    CONSTRAINT "Listener_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "Trigger" (
+    "id" TEXT NOT NULL,
+    "type" TEXT NOT NULL,
+    "status" TEXT NOT NULL DEFAULT 'unconfigured',
+    "automationId" TEXT,
+    "config" JSONB DEFAULT '{}',
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP(3) NOT NULL,
+
+    CONSTRAINT "Trigger_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "Keyword" (
     "id" UUID NOT NULL DEFAULT gen_random_uuid(),
     "word" TEXT NOT NULL,
     "triggerId" UUID NOT NULL,
 
-    CONSTRAINT "TriggerKeyword_pkey" PRIMARY KEY ("id")
+    CONSTRAINT "Keyword_pkey" PRIMARY KEY ("id")
 );
 
 -- CreateTable
-CREATE TABLE "TriggerReplyMessage" (
+CREATE TABLE "ReplyMessage" (
     "id" UUID NOT NULL DEFAULT gen_random_uuid(),
     "message" TEXT NOT NULL,
     "triggerId" UUID NOT NULL,
 
-    CONSTRAINT "TriggerReplyMessage_pkey" PRIMARY KEY ("id")
+    CONSTRAINT "ReplyMessage_pkey" PRIMARY KEY ("id")
 );
 
 -- CreateIndex
@@ -152,10 +167,25 @@ CREATE UNIQUE INDEX "Integrations_token_key" ON "Integrations"("token");
 CREATE UNIQUE INDEX "Integrations_instagramId_key" ON "Integrations"("instagramId");
 
 -- CreateIndex
+CREATE INDEX "Post_triggerId_idx" ON "Post"("triggerId");
+
+-- CreateIndex
 CREATE UNIQUE INDEX "Listener_automationId_key" ON "Listener"("automationId");
 
 -- CreateIndex
-CREATE UNIQUE INDEX "TriggerKeyword_triggerId_word_key" ON "TriggerKeyword"("triggerId", "word");
+CREATE INDEX "Trigger_automationId_idx" ON "Trigger"("automationId");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "Trigger_automationId_type_key" ON "Trigger"("automationId", "type");
+
+-- CreateIndex
+CREATE INDEX "Keyword_triggerId_idx" ON "Keyword"("triggerId");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "Keyword_triggerId_word_key" ON "Keyword"("triggerId", "word");
+
+-- CreateIndex
+CREATE INDEX "ReplyMessage_triggerId_idx" ON "ReplyMessage"("triggerId");
 
 -- AddForeignKey
 ALTER TABLE "Subscription" ADD CONSTRAINT "Subscription_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE;
@@ -170,16 +200,16 @@ ALTER TABLE "Automation" ADD CONSTRAINT "Automation_userId_fkey" FOREIGN KEY ("u
 ALTER TABLE "Dms" ADD CONSTRAINT "Dms_automationId_fkey" FOREIGN KEY ("automationId") REFERENCES "Automation"("id") ON DELETE SET NULL ON UPDATE CASCADE;
 
 -- AddForeignKey
+ALTER TABLE "Post" ADD CONSTRAINT "Post_triggerId_fkey" FOREIGN KEY ("triggerId") REFERENCES "Trigger"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
 ALTER TABLE "Listener" ADD CONSTRAINT "Listener_automationId_fkey" FOREIGN KEY ("automationId") REFERENCES "Automation"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "Trigger" ADD CONSTRAINT "Trigger_automationId_fkey" FOREIGN KEY ("automationId") REFERENCES "Automation"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "TriggerPost" ADD CONSTRAINT "TriggerPost_triggerId_fkey" FOREIGN KEY ("triggerId") REFERENCES "Trigger"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+ALTER TABLE "Keyword" ADD CONSTRAINT "Keyword_triggerId_fkey" FOREIGN KEY ("triggerId") REFERENCES "Trigger"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "TriggerKeyword" ADD CONSTRAINT "TriggerKeyword_triggerId_fkey" FOREIGN KEY ("triggerId") REFERENCES "Trigger"("id") ON DELETE CASCADE ON UPDATE CASCADE;
-
--- AddForeignKey
-ALTER TABLE "TriggerReplyMessage" ADD CONSTRAINT "TriggerReplyMessage_triggerId_fkey" FOREIGN KEY ("triggerId") REFERENCES "Trigger"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+ALTER TABLE "ReplyMessage" ADD CONSTRAINT "ReplyMessage_triggerId_fkey" FOREIGN KEY ("triggerId") REFERENCES "Trigger"("id") ON DELETE CASCADE ON UPDATE CASCADE;

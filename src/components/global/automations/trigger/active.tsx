@@ -1,14 +1,16 @@
-
 import { InstagramBlue, PlaneBlue } from '@/icons'
 import React from 'react'
 
+type KeywordType = {
+  id: string
+  word: string
+  automationId?: string | null
+  triggerId?: string
+}
+
 type Props = {
   type: string
-  keywords: {
-    id: string
-    word: string
-    automationId: string | null
-  }[]
+  keywords: KeywordType[]
 }
 
 const ActiveTrigger = ({ keywords, type }: Props) => {
